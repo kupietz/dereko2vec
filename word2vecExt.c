@@ -489,13 +489,18 @@ void InitClassUnigramTable() {
 }
 
 void SaveNet() {
+	if(type != 3 || negative <= 0) { 
+		fprintf(stderr, "save-net only supported for type 3 with negative sampling\n");
+		return;
+	}
+
 	FILE *fnet = fopen(save_net_file, "wb");
 	if (fnet == NULL) {
 		printf("Net parameter file not found\n");
 		exit(1);
 	}
 	fwrite(syn0, sizeof(real), vocab_size * layer1_size, fnet);
-	fwrite(syn_window_hidden, sizeof(real), window_hidden_size * window_layer_size, fnet);
+	fwrite(syn1neg_window, sizeof(real), vocab_size * window_layer_size, fnet);
 	fclose(fnet);
 }
 
@@ -626,21 +631,18 @@ void InitNet() {
 				syn0[a * layer1_size + b] = (((next_random & 0xFFFF)
 						/ (real) 65536) - 0.5) / layer1_size;
 			}
-	} else {
+	} else if(type == 3 && negative > 0) {
 		FILE *fnet = fopen(read_net_file, "rb");
 		if (fnet == NULL) {
 			printf("Net parameter file not found\n");
 			exit(1);
 		}
 		fread(syn0, sizeof(real), vocab_size * layer1_size, fnet);
-		a = posix_memalign((void **) &syn_window_hidden, 128,
-				window_hidden_size * window_layer_size * sizeof(real));
-		if (syn_window_hidden == NULL) {
-			printf("Memory allocation failed\n");
-			exit(1);
-		}
-		fread(syn_window_hidden, sizeof(real), window_hidden_size * window_layer_size, fnet);
+		fread(syn1neg_window, sizeof(real), vocab_size * window_layer_size, fnet);
 		fclose(fnet);
+	} else {
+		fprintf(stderr, "read-net only supported for type 3 with negative sampling\n");
+		exit(-1);
 	}
 
 	CreateBinaryTree();
