@@ -541,34 +541,37 @@ void InitNet() {
 				syn_hidden_word[a * window_hidden_size + b] = 0;
 	}
 	if (negative > 0) {
-		a = posix_memalign((void **) &syn1neg, 128,
-				(long long) vocab_size * layer1_size * sizeof(real));
-		if (syn1neg == NULL) {
-			printf("Memory allocation failed\n");
-			exit(1);
+		if(type == 0) {
+			a = posix_memalign((void **) &syn1neg, 128,
+												 (long long) vocab_size * layer1_size * sizeof(real));
+			if (syn1neg == NULL) {
+				printf("Memory allocation failed\n");
+				exit(1);
+			}
+			for (a = 0; a < vocab_size; a++)
+				for (b = 0; b < layer1_size; b++)
+					syn1neg[a * layer1_size + b] = 0;
+		} else if (type == 3) {
+			a = posix_memalign((void **) &syn1neg_window, 128,
+												 (long long) vocab_size * window_layer_size * sizeof(real));
+			if (syn1neg_window == NULL) {
+				printf("Memory allocation failed\n");
+				exit(1);
+			}
+			for (a = 0; a < vocab_size; a++)
+				for (b = 0; b < window_layer_size; b++)
+					syn1neg_window[a * window_layer_size + b] = 0;
+		} else if (type == 4) {
+			a = posix_memalign((void **) &syn_hidden_word_neg, 128,
+												 (long long) vocab_size * window_hidden_size * sizeof(real));
+			if (syn_hidden_word_neg == NULL) {
+				printf("Memory allocation failed\n");
+				exit(1);
+			}
+			for (a = 0; a < vocab_size; a++)
+				for (b = 0; b < window_hidden_size; b++)
+					syn_hidden_word_neg[a * window_hidden_size + b] = 0;
 		}
-		a = posix_memalign((void **) &syn1neg_window, 128,
-				(long long) vocab_size * window_layer_size * sizeof(real));
-		if (syn1neg_window == NULL) {
-			printf("Memory allocation failed\n");
-			exit(1);
-		}
-		a = posix_memalign((void **) &syn_hidden_word_neg, 128,
-				(long long) vocab_size * window_hidden_size * sizeof(real));
-		if (syn_hidden_word_neg == NULL) {
-			printf("Memory allocation failed\n");
-			exit(1);
-		}
-
-		for (a = 0; a < vocab_size; a++)
-			for (b = 0; b < layer1_size; b++)
-				syn1neg[a * layer1_size + b] = 0;
-		for (a = 0; a < vocab_size; a++)
-			for (b = 0; b < window_layer_size; b++)
-				syn1neg_window[a * window_layer_size + b] = 0;
-		for (a = 0; a < vocab_size; a++)
-			for (b = 0; b < window_hidden_size; b++)
-				syn_hidden_word_neg[a * window_hidden_size + b] = 0;
 	}
 	if (nce > 0) {
 		a = posix_memalign((void **) &syn1nce, 128,
@@ -600,15 +603,8 @@ void InitNet() {
 			for (b = 0; b < window_hidden_size; b++)
 				syn_hidden_word_nce[a * window_hidden_size + b] = 0;
 	}
-	if (read_net_file[0] == 0) {
-		for (a = 0; a < vocab_size; a++)
-			for (b = 0; b < layer1_size; b++) {
-				next_random = next_random * (unsigned long long) 25214903917
-						+ 11;
-				syn0[a * layer1_size + b] = (((next_random & 0xFFFF)
-						/ (real) 65536) - 0.5) / layer1_size;
-			}
 
+	if(type == 4) {
 		a = posix_memalign((void **) &syn_window_hidden, 128,
 				window_hidden_size * window_layer_size * sizeof(real));
 		if (syn_window_hidden == NULL) {
@@ -621,7 +617,16 @@ void InitNet() {
 					- 0.5) / (window_hidden_size * window_layer_size);
 		}
 	}
-	else {
+
+	if (read_net_file[0] == 0) {
+		for (a = 0; a < vocab_size; a++)
+			for (b = 0; b < layer1_size; b++) {
+				next_random = next_random * (unsigned long long) 25214903917
+						+ 11;
+				syn0[a * layer1_size + b] = (((next_random & 0xFFFF)
+						/ (real) 65536) - 0.5) / layer1_size;
+			}
+	} else {
 		FILE *fnet = fopen(read_net_file, "rb");
 		if (fnet == NULL) {
 			printf("Net parameter file not found\n");
