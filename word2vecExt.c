@@ -489,19 +489,13 @@ void InitClassUnigramTable() {
 }
 
 void SaveNet() {
-	long long a, b;
 	FILE *fnet = fopen(save_net_file, "wb");
 	if (fnet == NULL) {
 		printf("Net parameter file not found\n");
 		exit(1);
 	}
-	for (a = 0; a < vocab_size; a++)
-		for (b = 0; b < layer1_size; b++) {
-			fwrite(&syn0[a * layer1_size + b], sizeof(real), 1, fnet);
-		}
-	for (a = 0; a < window_hidden_size * window_layer_size; a++) {
-		fwrite(&syn_window_hidden[a],sizeof(real),1,fnet);
-	}
+	fwrite(syn0, sizeof(real), vocab_size * layer1_size, fnet);
+	fwrite(syn_window_hidden, sizeof(real), window_hidden_size * window_layer_size, fnet);
 	fclose(fnet);
 }
 
@@ -633,20 +627,14 @@ void InitNet() {
 			printf("Net parameter file not found\n");
 			exit(1);
 		}
-		for (a = 0; a < vocab_size; a++)
-			for (b = 0; b < layer1_size; b++) {
-				fread(&syn0[a * layer1_size + b], sizeof(real), 1, fnet);
-			}
-
+		fread(syn0, sizeof(real), vocab_size * layer1_size, fnet);
 		a = posix_memalign((void **) &syn_window_hidden, 128,
 				window_hidden_size * window_layer_size * sizeof(real));
 		if (syn_window_hidden == NULL) {
 			printf("Memory allocation failed\n");
 			exit(1);
 		}
-		for (a = 0; a < window_hidden_size * window_layer_size; a++) {
-			fread(&syn_window_hidden[a],sizeof(real),1,fnet);
-		}
+		fread(syn_window_hidden, sizeof(real), window_hidden_size * window_layer_size, fnet);
 		fclose(fnet);
 	}
 
