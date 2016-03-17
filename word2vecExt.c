@@ -59,6 +59,8 @@ int hs = 0, negative = 5;
 const int table_size = 1e8;
 int *table;
 
+long cc = 0;
+
 //constrastive negative sampling
 char negative_classes_file[MAX_STRING];
 int *word_to_group;
@@ -1345,6 +1347,10 @@ void *TrainModelThread(void *id) {
 														* (EXP_TABLE_SIZE
 																/ MAX_EXP / 2))])
 												* alpha;
+							if(debug_mode > 2 && ((long long) id) == 0) {
+								printf("negative sampling %lld for input (word) %s (#%lld), target (last word) %s returned %s (#%lld), ", d, vocab[word].word, word, vocab[last_word].word, vocab[target].word, target);
+								printf("label %lld, a %lld, gain %.4f\n", label, a-window, g);
+							}
 							for (c = 0; c < layer1_size; c++)
 								neu1e[c] +=
 										g
@@ -1580,6 +1586,63 @@ void *TrainModelThread(void *id) {
 	pthread_exit(NULL);
 }
 
+void ShowCollocations() {
+	long a, b, c, d, window_offset, target, max_target=0, maxmax_target;
+	real f, max_f, maxmax_f;
+	real *target_sums;
+	a = posix_memalign((void **) &target_sums, 128, vocab_size * sizeof(real));
+
+	for (d = cc; d < vocab_size; d++) {
+		for (b = 0; b < vocab_size; b++)
+			target_sums[b]=0;
+		maxmax_f = -1;
+		maxmax_target = 0;
+		for (a = 0; a < window * 2 + 1; a++) {
+			if (a != window) {
+				max_f = -1;
+				window_offset = a * layer1_size;
+				if (a > window)
+					window_offset -= layer1_size;
+				for(target = 0; target < vocab_size; target ++) {
+					if(target == d)
+						continue;
+					f = 0;
+					for (c = 0; c < layer1_size; c++)
+						f += syn0[d* layer1_size + c]	* syn1neg_window[target * window_layer_size	+ window_offset + c];
+					if (f < -MAX_EXP)
+						continue;
+					else if (f > MAX_EXP)
+						continue;
+					else
+						f = expTable[(int) ((f + MAX_EXP)	* (EXP_TABLE_SIZE / MAX_EXP / 2))];
+					if(f > max_f) {
+						max_f = f;
+						max_target = target;
+					}
+					target_sums[target]+=f;
+				}
+				printf("%s (%.2f) ", vocab[max_target].word, max_f);
+				if(max_f > maxmax_f) {
+					maxmax_f = max_f;
+					maxmax_target = max_target;
+				}
+			} else {
+				printf("\x1b[1m%s\x1b[0m ", vocab[d].word);
+			}
+		}
+		max_f = -1;
+		for (b = 0; b < vocab_size; b++) {
+			if(target_sums[b] > max_f) {
+				max_f = target_sums[b];
+				max_target = b;
+			}
+		}
+		printf(" – max sum: %s (%.2f), max resp.: \x1b[1m%s\x1b[0m (%.2f)\n",
+					 vocab[max_target].word, max_f/window/2,
+					 vocab[maxmax_target].word, maxmax_f);
+	}
+}
+
 void TrainModel() {
 	long a, b, c, d;
 	FILE *fo;
@@ -1595,6 +1658,8 @@ void TrainModel() {
 	if (output_file[0] == 0)
 		return;
 	InitNet();
+	if(cc > 0)
+		ShowCollocations();
 	if (negative > 0 || nce > 0)
 		InitUnigramTable();
 	if (negative_classes_file[0] != 0)
@@ -1748,6 +1813,8 @@ int main(int argc, char **argv) {
 				"\t\tThe net parameters will be read from <file>, not initialized randomly\n");
 		printf("\t-save-net <file>\n");
 		printf("\t\tThe net parameters will be saved to <file>\n");
+		printf("\t-show-cc <int>\n");
+		printf("\t\tShow words with their collocators starting from word rank <int>. Depends on -read-vocab and -read-net.\n");
 		printf("\t-type <int>\n");
 		printf(
 				"\t\tType of embeddings (0 for cbow, 1 for skipngram, 2 for cwindow, 3 for structured skipngram, 4 for senna type)\n");
@@ -1781,6 +1848,8 @@ int main(int argc, char **argv) {
 		debug_mode = atoi(argv[i + 1]);
 	if ((i = ArgPos((char *) "-binary", argc, argv)) > 0)
 		binary = atoi(argv[i + 1]);
+	if ((i = ArgPos((char *) "-show-cc", argc, argv)) > 0)
+		cc = atoi(argv[i + 1]);
 	if ((i = ArgPos((char *) "-type", argc, argv)) > 0)
 		type = atoi(argv[i + 1]);
 	if ((i = ArgPos((char *) "-output", argc, argv)) > 0)
