@@ -1609,7 +1609,7 @@ void ShowCollocations() {
 	real f, max_f, maxmax_f;
 	real *target_sums, bestf[MAX_CC], worstbest;
 	long besti[MAX_CC];
-	int N = 10;
+	int N = 10, bestp[MAX_CC];
 	a = posix_memalign((void **) &target_sums, 128, vocab_size * sizeof(real));
 
 	for (d = cc; d < vocab_size; d++) {
@@ -1650,9 +1650,11 @@ void ShowCollocations() {
 								for (e = N - 1; e > b; e--) {
 									bestf[e] = bestf[e - 1];
 									besti[e] = besti[e - 1];
+									bestp[e] = bestp[e - 1];
 								}
 								bestf[b] = f;
 								besti[b] = target;
+								bestp[b] = window-a;
 								break;
 							}
 						}
@@ -1679,7 +1681,7 @@ void ShowCollocations() {
 					 vocab[max_target].word, max_f,
 					 vocab[maxmax_target].word, maxmax_f);
 		for(b=0; b<N && bestf[b]>-1; b++) 
-			printf("%-32s %.2f\n", vocab[besti[b]].word, bestf[b]);
+			printf("%-32s %.2f %d\n", vocab[besti[b]].word, bestf[b], bestp[b]);
 		printf("\n");
 	}
 }
