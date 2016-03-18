@@ -1614,7 +1614,7 @@ void ShowCollocations() {
 			target_sums[b]=0;
 		maxmax_f = -1;
 		maxmax_target = 0;
-		for (a = 0; a < window * 2 + 1; a++) {
+		for (a = window * 2 + 1; a >=0; a--) {
 			if (a != window) {
 				max_f = -1;
 				window_offset = a * layer1_size;
