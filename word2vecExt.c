@@ -1619,7 +1619,7 @@ void ShowCollocations() {
 						max_f = f;
 						max_target = target;
 					}
-					target_sums[target]+=f;
+					target_sums[target] += (1-target_sums[target]) * f;
 				}
 				printf("%s (%.2f) ", vocab[max_target].word, max_f);
 				if(max_f > maxmax_f) {
@@ -1638,7 +1638,7 @@ void ShowCollocations() {
 			}
 		}
 		printf(" – max sum: %s (%.2f), max resp.: \x1b[1m%s\x1b[0m (%.2f)\n",
-					 vocab[max_target].word, max_f/window/2,
+					 vocab[max_target].word, max_f,
 					 vocab[maxmax_target].word, maxmax_f);
 	}
 }
