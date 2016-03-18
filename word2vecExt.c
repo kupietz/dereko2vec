@@ -22,6 +22,7 @@
 #define EXP_TABLE_SIZE 1000
 #define MAX_EXP 6
 #define MAX_SENTENCE_LENGTH 1000
+#define MAX_CC 100
 #define MAX_CODE_LENGTH 40
 
 const int vocab_hash_size = 30000000; // Maximum 30 * 0.7 = 21M words in the vocabulary
@@ -1604,14 +1605,20 @@ void *TrainModelThread(void *id) {
 }
 
 void ShowCollocations() {
-	long a, b, c, d, window_offset, target, max_target=0, maxmax_target;
+	long a, b, c, d, e, window_offset, target, max_target=0, maxmax_target;
 	real f, max_f, maxmax_f;
-	real *target_sums;
+	real *target_sums, bestf[MAX_CC], worstbest;
+	long besti[MAX_CC];
+	int N = 10;
 	a = posix_memalign((void **) &target_sums, 128, vocab_size * sizeof(real));
 
 	for (d = cc; d < vocab_size; d++) {
 		for (b = 0; b < vocab_size; b++)
 			target_sums[b]=0;
+		for (b = 0; b < N; b++)
+			bestf[b]=-1;
+		worstbest = -1;
+
 		maxmax_f = -1;
 		maxmax_target = 0;
 		for (a = window * 2 + 1; a >=0; a--) {
@@ -1637,6 +1644,20 @@ void ShowCollocations() {
 						max_target = target;
 					}
 					target_sums[target] += (1-target_sums[target]) * f;
+					if(f > worstbest) {
+						for (b = 0; b < N; b++) {
+							if (f > bestf[b]) {
+								for (e = N - 1; e > b; e--) {
+									bestf[e] = bestf[e - 1];
+									besti[e] = besti[e - 1];
+								}
+								bestf[b] = f;
+								besti[b] = target;
+								break;
+							}
+						}
+						worstbest = bestf[N-1];
+					}
 				}
 				printf("%s (%.2f) ", vocab[max_target].word, max_f);
 				if(max_f > maxmax_f) {
@@ -1657,6 +1678,9 @@ void ShowCollocations() {
 		printf(" – max sum: %s (%.2f), max resp.: \x1b[1m%s\x1b[0m (%.2f)\n",
 					 vocab[max_target].word, max_f,
 					 vocab[maxmax_target].word, maxmax_f);
+		for(b=0; b<N && bestf[b]>-1; b++) 
+			printf("%-32s %.2f\n", vocab[besti[b]].word, bestf[b]);
+		printf("\n");
 	}
 }
 
