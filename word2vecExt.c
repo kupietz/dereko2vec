@@ -492,21 +492,11 @@ void InitClassUnigramTable() {
 }
 
 void SaveNet() {
-	long long a, b;
-	float len;
-
 	if(type != 3 || negative <= 0) { 
 		fprintf(stderr, "save-net only supported for type 3 with negative sampling\n");
 		return;
 	}
 
-	for (b = 0; b < vocab_size; b++) {
-		len = 0;
-		for (a = 0; a < layer1_size; a++) len += syn0[a + b * layer1_size] * syn0[a + b * layer1_size];
-		len = sqrt(len);
-		for (a = 0; a < layer1_size; a++) syn0[a + b * layer1_size] /= len;
-	}
-	
 	FILE *fnet = fopen(save_net_file, "wb");
 	if (fnet == NULL) {
 		printf("Net parameter file not found\n");
