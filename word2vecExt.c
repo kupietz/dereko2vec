@@ -730,8 +730,12 @@ void *TrainModelThread(void *id) {
 							+ 1) * (sample * train_words) / vocab[word].cn;
 					next_random = next_random * (unsigned long long) 25214903917
 							+ 11;
-					if (ran < (next_random & 0xFFFF) / (real) 65536)
-						continue;
+					if (ran < (next_random & 0xFFFF) / (real) 65536) {
+            if(type == 3) // in structured skipgrams 
+              word = -2;  // keep the window position correct
+            else
+              continue;
+					}
 				}
 				sen[sentence_length] = word;
 				sentence_length++;
@@ -753,6 +757,8 @@ void *TrainModelThread(void *id) {
 			continue;
 		}
 		word = sen[sentence_position];
+    if (word == -2)
+      word = sen[++sentence_position];
 		if (word == -1)
 			continue;
 		for (c = 0; c < input_len_1; c++)
@@ -1271,6 +1277,8 @@ void *TrainModelThread(void *id) {
 				if (a != window) {
 					c = sentence_position - window + a;
 					if (c < 0)
+						continue;
+					if(sen[c] == -2)
 						continue;
 					if (c >= sentence_length)
 						continue;
