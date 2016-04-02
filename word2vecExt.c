@@ -491,6 +491,39 @@ void InitClassUnigramTable() {
 	}
 }
 
+void SaveArgs(int argc, char **argv) {
+	unsigned int i;
+	size_t len = 0;
+	char *_all_args, *all_args;
+	char *args_file = strdup(output_file);
+	strcat(args_file, ".args");
+	FILE *fargs = fopen(args_file, "w");
+	if (fargs == NULL) {
+		printf("Cannot save args to %s.\n", args_file);
+		return;
+	}
+	
+	for(i=1; i<argc; i++) {
+		len += strlen(argv[i]);
+	}
+	
+	_all_args = all_args = (char *)malloc(len+argc-1);
+	
+	for(i=1; i<argc; i++) {
+		memcpy(_all_args, argv[i], strlen(argv[i]));
+		_all_args += strlen(argv[i])+1;
+		*(_all_args-1) = ' ';
+	}
+	*(_all_args-1) = 0;
+	
+	fprintf(fargs, "%s\n", all_args);
+	fclose(fargs);
+	
+	free(all_args);
+	
+	return;
+}
+
 void SaveNet() {
 	if(type != 3 || negative <= 0) { 
 		fprintf(stderr, "save-net only supported for type 3 with negative sampling\n");
@@ -1939,6 +1972,7 @@ int main(int argc, char **argv) {
 		expTable[i] = exp((i / (real) EXP_TABLE_SIZE * 2 - 1) * MAX_EXP); // Precompute the exp() table
 		expTable[i] = expTable[i] / (expTable[i] + 1); // Precompute f(x) = x / (x + 1)
 	}
+	SaveArgs(argc, argv);
 	TrainModel();
 	return 0;
 }
