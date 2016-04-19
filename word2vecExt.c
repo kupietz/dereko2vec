@@ -790,7 +790,7 @@ void *TrainModelThread(void *id) {
 			continue;
 		}
 		word = sen[sentence_position];
-    if (word == -2)
+    while (word == -2)
       word = sen[++sentence_position];
 		if (word == -1)
 			continue;
