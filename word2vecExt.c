@@ -790,9 +790,13 @@ void *TrainModelThread(void *id) {
 			continue;
 		}
 		word = sen[sentence_position];
-    while (word == -2)
-      word = sen[++sentence_position];
-		if (word == -1)
+    while (word == -2 && sentence_position<sentence_length)
+	      word = sen[++sentence_position];
+   if (sentence_position>=sentence_length) {
+      sentence_length=0;
+      continue;
+   }
+		if (word < 0)
 			continue;
 		for (c = 0; c < input_len_1; c++)
 			neu1[c] = 0;
@@ -1311,12 +1315,10 @@ void *TrainModelThread(void *id) {
 					c = sentence_position - window + a;
 					if (c < 0)
 						continue;
-					if(sen[c] == -2)
-						continue;
 					if (c >= sentence_length)
 						continue;
 					last_word = sen[c];
-					if (last_word == -1)
+					if (last_word < 0)
 						continue;
 					l1 = last_word * layer1_size;
 					window_offset = a * layer1_size;
