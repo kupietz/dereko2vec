@@ -733,8 +733,8 @@ void *TrainModelThread(void *id) {
 			if ((debug_mode > 1)) {
 				now = clock();
 				printf(
-						"%cAlpha: %f  Progress: %.2f%%  Words/thread/sec: %.2fk  ",
-						13, alpha,
+						"%cCycles ahead: %lld, Alpha: %f  Progress: %.2f%%  Words/thread/sec: %.2fk  ",
+						13, local_iter, alpha,
 						word_count_actual / (real) (iter * train_words + 1)
 								* 100,
 						word_count_actual
