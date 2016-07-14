@@ -12,6 +12,7 @@
 //  See the License for the specific language governing permissions and
 //  limitations under the License.
 
+#include <locale.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -383,8 +384,8 @@ void LearnVocabFromTrainFile() {
 	}
 	SortVocab();
 	if (debug_mode > 0) {
-		printf("Vocab size: %lld\n", vocab_size);
-		printf("Words in train file: %lld\n", train_words);
+		printf("Vocab size: %'lld\n", vocab_size);
+		printf("Words in train file: %'lld\n", train_words);
 	}
 	file_size = ftell(fin);
 	fclose(fin);
@@ -429,19 +430,13 @@ void ReadVocab() {
 	fclose(fin);
 	SortVocab();
 	if (debug_mode > 0) {
-		printf("Vocab size: %lld\n", vocab_size);
-		if(*read_vocab_file) {
-			printf("Words in vocab's train file: %lld\n", train_words);
-			printf("Avg. word length in vocab's train file: %.2f\n", avgWordLength);
-		} else {
-			printf("Words in train file: %lld\n", train_words);
-		}
+		printf("Vocab size: %'lld\n", vocab_size);
+		printf("Words in vocab's train file: %'lld\n", train_words);
+		printf("Avg. word length in vocab's train file: %.2f\n", avgWordLength);
 	}
-	if(*read_vocab_file) {
-		train_words = file_size / avgWordLength;
-		if(debug_mode > 0)
-			printf("Estimated words in train file: %lld\n", train_words);
-	}
+	train_words = file_size / avgWordLength;
+	if(debug_mode > 0)
+		printf("Estimated words in train file: %'lld\n", train_words);
 }
 
 void InitClassUnigramTable() {
@@ -1915,6 +1910,7 @@ int ArgPos(char *str, int argc, char **argv) {
 
 int main(int argc, char **argv) {
 	int i;
+	setlocale(LC_ALL, "");
 	if (argc == 1) {
 		printf("WORD VECTOR estimation toolkit v 0.1c\n\n");
 		printf("Options:\n");
