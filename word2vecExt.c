@@ -40,13 +40,16 @@ char save_vocab_file[MAX_STRING], read_vocab_file[MAX_STRING];
 char save_net_file[MAX_STRING], read_net_file[MAX_STRING];
 struct vocab_word *vocab;
 int binary = 0, type = 1, debug_mode = 2, window = 5, min_count = 5,
-		num_threads = 12, min_reduce = 1;
+	num_threads = 12, min_reduce = 1;
 int *vocab_hash;
+long long *threadPos;
+int *threadIters;
 long long vocab_max_size = 1000, vocab_size = 0, layer1_size = 100;
 long long train_words = 0, word_count_actual = 0, iter = 5, file_size = 0,
 		classes = 0;
 real alpha = 0.025, starting_alpha, sample = 1e-3;
 real *syn0, *syn1, *syn1neg, *syn1nce, *expTable;
+real avgWordLength=0;
 clock_t start;
 
 real *syn1_window, *syn1neg_window, *syn1nce_window;
@@ -224,6 +227,7 @@ void SortVocab() {
 	size = vocab_size;
 	train_words = 0;
 	for (a = 0; a < size; a++) {
+		avgWordLength += vocab[a].cn * (strlen(vocab[a].word) + 1);
 		// Words occuring less than min_count times will be discarded from the vocab
 		if ((vocab[a].cn < min_count) && (a != 0)) {
 			vocab_size--;
@@ -237,6 +241,7 @@ void SortVocab() {
 			train_words += vocab[a].cn;
 		}
 	}
+	avgWordLength /= train_words;
 	vocab = (struct vocab_word *) realloc(vocab,
 			(vocab_size + 1) * sizeof(struct vocab_word));
 	// Allocate memory for the binary tree construction
@@ -412,11 +417,7 @@ void ReadVocab() {
 		fscanf(fin, "%lld%c", &vocab[a].cn, &c);
 		i++;
 	}
-	SortVocab();
-	if (debug_mode > 0) {
-		printf("Vocab size: %lld\n", vocab_size);
-		printf("Words in train file: %lld\n", train_words);
-	}
+	fclose(fin);
 	fin = fopen(train_file, "rb");
 	if (fin == NULL) {
 		printf("ERROR: training data file not found!\n");
@@ -425,6 +426,21 @@ void ReadVocab() {
 	fseek(fin, 0, SEEK_END);
 	file_size = ftell(fin);
 	fclose(fin);
+	SortVocab();
+	if (debug_mode > 0) {
+		printf("Vocab size: %lld\n", vocab_size);
+		if(*read_vocab_file) {
+			printf("Words in vocab's train file: %lld\n", train_words);
+			printf("Avg. word length in vocab's train file: %.2f\n", avgWordLength);
+		} else {
+			printf("Words in train file: %lld\n", train_words);
+		}
+	}
+	if(*read_vocab_file) {
+		train_words = file_size / avgWordLength;
+		if(debug_mode > 0)
+			printf("Estimated words in train file: %lld\n", train_words);
+	}
 }
 
 void InitClassUnigramTable() {
