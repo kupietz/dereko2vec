@@ -15,6 +15,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 #include <math.h>
 #include <pthread.h>
 
@@ -717,6 +718,52 @@ void InitNet() {
 	CreateBinaryTree();
 }
 
+char *currentDateTime(char *buf, real offset) {
+	time_t     t;
+	time(&t);
+	t += (long) offset;
+	struct tm  tstruct;
+	tstruct = *localtime(&t);
+	strftime(buf, 80, "%c", &tstruct);
+	return buf;
+}
+
+void *MonitorThread(void *id) {
+	char *timebuf = malloc(80);;
+	int i, n=num_threads;
+	long long sum;
+	sleep(1);
+	while(n > 0) {
+		sleep(1);
+		sum = n = 0;
+		for(i=0; i < num_threads; i++) {
+			if(threadPos[i] >= 0) {
+				sum += (iter - threadIters[i]) * file_size / num_threads + threadPos[i] - (file_size / num_threads) * i;
+				n++;
+			} else {
+				sum += iter * file_size / num_threads;
+			}
+		}
+		if(n == 0)
+			break;
+		real finished_portion = (real) sum / (float) (file_size * iter);
+		long long now = clock();
+		long long elapsed = (now - start) / CLOCKS_PER_SEC / num_threads;
+		long long ttg = ((1.0 / finished_portion) * (real) elapsed - elapsed) * ((real) num_threads / n) ;
+
+		printf("\rAlpha: %.3f  Done: %.2f%% with %.2fKB/t/s  TE: %llds  TTG: %llds  ETA: %s\033[K",
+					 alpha,
+					 finished_portion * 100,
+					 (float) sum / elapsed / num_threads / 1000,
+					 elapsed,
+					 ttg,
+					 currentDateTime(timebuf, ttg)
+					 );
+		fflush(stdout);
+	}
+	pthread_exit(NULL);
+}
+
 void *TrainModelThread(void *id) {
 	long long a, b, d, cw, word, last_word, sentence_length = 0,
 			sentence_position = 0;
@@ -724,7 +771,6 @@ void *TrainModelThread(void *id) {
 	long long l1, l2, c, target, label, local_iter = iter;
 	unsigned long long next_random = (long long) id;
 	real f, g;
-	clock_t now;
 	int input_len_1 = layer1_size;
 	int window_offset = -1;
 	if (type == 2 || type == 4) {
@@ -732,6 +778,7 @@ void *TrainModelThread(void *id) {
 	}
 	real *neu1 = (real *) calloc(input_len_1, sizeof(real));
 	real *neu1e = (real *) calloc(input_len_1, sizeof(real));
+	threadIters[(long) id] = iter;
 
 	int input_len_2 = 0;
 	if (type == 4) {
@@ -741,23 +788,16 @@ void *TrainModelThread(void *id) {
 	real *neu2e = (real *) calloc(input_len_2, sizeof(real));
 
 	FILE *fi = fopen(train_file, "rb");
-	fseek(fi, file_size / (long long) num_threads * (long long) id, SEEK_SET);
+	long long start_pos = file_size / (long long) num_threads * (long long) id;
+	long long end_pos = file_size / (long long) num_threads * (long long) (id + 1) -1;
+	long long current_pos = start_pos;
+	long long last_pos = start_pos;;
+	fseek(fi, start_pos, SEEK_SET);
 	while (1) {
-		if (word_count - last_word_count > 10000) {
+		if ((current_pos - last_pos > 100000)) {
 			word_count_actual += word_count - last_word_count;
+			last_pos = current_pos;
 			last_word_count = word_count;
-			if ((debug_mode > 1)) {
-				now = clock();
-				printf(
-						"%cCycles ahead: %lld, Alpha: %f  Progress: %.2f%%  Words/thread/sec: %.2fk  ",
-						13, local_iter, alpha,
-						word_count_actual / (real) (iter * train_words + 1)
-								* 100,
-						word_count_actual
-								/ ((real) (now - start + 1)
-										/ (real) CLOCKS_PER_SEC * 1000));
-				fflush(stdout);
-			}
 			alpha = starting_alpha
 					* (1 - word_count_actual / (real) (iter * train_words + 1));
 			if (alpha < starting_alpha * 0.0001)
@@ -793,16 +833,18 @@ void *TrainModelThread(void *id) {
 			}
 			sentence_position = 0;
 		}
-		if (feof(fi) || (word_count > train_words / num_threads)) {
+		current_pos = threadPos[(long) id] = ftell(fi);
+		if (feof(fi) || current_pos >= end_pos ) {
 			word_count_actual += word_count - last_word_count;
+			threadIters[(long) id]--;
 			local_iter--;
 			if (local_iter == 0)
 				break;
 			word_count = 0;
+			current_pos = last_pos = start_pos;
 			last_word_count = 0;
 			sentence_length = 0;
-			fseek(fi, file_size / (long long) num_threads * (long long) id,
-					SEEK_SET);
+			fseek(fi, start_pos, SEEK_SET);
 			continue;
 		}
 		word = sen[sentence_position];
@@ -1660,6 +1702,7 @@ void *TrainModelThread(void *id) {
 	fclose(fi);
 	free(neu1);
 	free(neu1e);
+	threadPos[(long) id] = -1;
 	pthread_exit(NULL);
 }
 
@@ -1749,6 +1792,9 @@ void TrainModel() {
 	long a, b, c, d;
 	FILE *fo;
 	pthread_t *pt = (pthread_t *) malloc(num_threads * sizeof(pthread_t));
+	threadPos = malloc(num_threads * sizeof(long long));
+	threadIters = malloc(num_threads * sizeof(int));
+	char *timebuf = malloc(80);
 	printf("Starting training using file %s\n", train_file);
 	starting_alpha = alpha;
 	if (read_vocab_file[0] != 0)
@@ -1769,8 +1815,17 @@ void TrainModel() {
 	start = clock();
 	for (a = 0; a < num_threads; a++)
 		pthread_create(&pt[a], NULL, TrainModelThread, (void *) a);
+	if(debug_mode > 1)
+		pthread_create(&pt[num_threads], NULL, MonitorThread, (void *) a);
 	for (a = 0; a < num_threads; a++)
 		pthread_join(pt[a], NULL);
+	if(debug_mode > 1) {
+		pthread_join(pt[num_threads], NULL);
+		clock_t now = clock();
+		printf("\nFinished: %s - user: %lds - real: %lds\n", currentDateTime(timebuf, 0), (now-start) / CLOCKS_PER_SEC / num_threads,  (now-start) / CLOCKS_PER_SEC);
+		printf("Saving vectors to %s ...", output_file);
+		fflush(stdout);
+	}
 	fo = fopen(output_file, "wb");
 	if (classes == 0) {
 		// Save the word vectors
@@ -1785,6 +1840,8 @@ void TrainModel() {
 					fprintf(fo, "%lf ", syn0[a * layer1_size + b]);
 			fprintf(fo, "\n");
 		}
+		if(debug_mode > 1)
+			fprintf(stderr, "\n");
 	} else {
 		// Run K-means on the word vectors
 		int clcn = classes, iter = 10, closeid;
