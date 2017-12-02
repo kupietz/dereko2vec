@@ -1908,10 +1908,7 @@ int ArgPos(char *str, int argc, char **argv) {
 	return -1;
 }
 
-int main(int argc, char **argv) {
-	int i;
-	setlocale(LC_ALL, "");
-	if (argc == 1) {
+void print_help() {
 		printf("WORD VECTOR estimation toolkit v 0.1c\n\n");
 		printf("Options:\n");
 		printf("Parameters for training:\n");
@@ -1979,6 +1976,13 @@ int main(int argc, char **argv) {
 		printf("\nExamples:\n");
 		printf(
 				"./word2vec -train data.txt -output vec.txt -size 200 -window 5 -sample 1e-4 -negative 5 -hs 0 -binary 0 -type 1 -iter 3\n\n");
+}
+
+int main(int argc, char **argv) {
+	int i;
+	setlocale(LC_ALL, "");
+	if (argc == 1) {
+		print_help();
 		return 0;
 	}
 	output_file[0] = 0;
@@ -1987,6 +1991,14 @@ int main(int argc, char **argv) {
 	save_net_file[0] = 0;
 	read_net_file[0] = 0;
 	negative_classes_file[0] = 0;
+	if ((i = ArgPos((char *) "-h", argc, argv)) > 0) {
+		print_help();
+		return(0);
+	}
+	if ((i = ArgPos((char *) "-help", argc, argv)) > 0) {
+		print_help();
+		return(0);
+	}
 	if ((i = ArgPos((char *) "-size", argc, argv)) > 0)
 		layer1_size = atoi(argv[i + 1]);
 	if ((i = ArgPos((char *) "-train", argc, argv)) > 0)
