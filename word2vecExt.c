@@ -40,6 +40,8 @@ struct vocab_word {
 char train_file[MAX_STRING], output_file[MAX_STRING];
 char save_vocab_file[MAX_STRING], read_vocab_file[MAX_STRING];
 char save_net_file[MAX_STRING], read_net_file[MAX_STRING];
+char magic_stop_file[MAX_STRING];
+
 struct vocab_word *vocab;
 int binary = 0, type = 1, debug_mode = 2, window = 5, min_count = 5,
 	num_threads = 12, min_reduce = 1;
@@ -822,6 +824,10 @@ void *TrainModelThread(void *id) {
 			local_iter--;
 			if (local_iter == 0)
 				break;
+			if (magic_stop_file[0] && access(magic_stop_file, F_OK ) != -1) {
+				printf("Magic stop file %s found. Stopping traing ...\n", magic_stop_file);
+				break;
+			}
 			word_count = 0;
 			current_pos = last_pos = start_pos;
 			last_word_count = 0;
@@ -1952,6 +1958,8 @@ void print_help() {
 				"\t\tThe net parameters will be read from <file>, not initialized randomly\n");
 		printf("\t-save-net <file>\n");
 		printf("\t\tThe net parameters will be saved to <file>\n");
+		printf("\t-magic-stop-file <file>\n");
+		printf("\t\tIf the magic file <file> exists training will stop after the current cycle.\n");
 		printf("\t-show-cc <int>\n");
 		printf("\t\tShow words with their collocators starting from word rank <int>. Depends on -read-vocab and -read-net.\n");
 		printf("\t-type <int>\n");
@@ -1998,6 +2006,13 @@ int main(int argc, char **argv) {
 		strcpy(save_net_file, argv[i + 1]);
 	if ((i = ArgPos((char *) "-read-net", argc, argv)) > 0)
 		strcpy(read_net_file, argv[i + 1]);
+	if ((i = ArgPos((char *) "-magic-stop-file", argc, argv)) > 0) {
+		strcpy(magic_stop_file, argv[i + 1]);
+		if (access(magic_stop_file, F_OK ) != -1) {
+			printf("ERROR: magic stop file %s must not exist at start.\n", magic_stop_file);
+			exit(1);
+		}
+  }
 	if ((i = ArgPos((char *) "-debug", argc, argv)) > 0)
 		debug_mode = atoi(argv[i + 1]);
 	if ((i = ArgPos((char *) "-binary", argc, argv)) > 0)
