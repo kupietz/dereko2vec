@@ -505,9 +505,8 @@ void InitClassUnigramTable() {
 
 void SaveArgs(int argc, char **argv) {
 	unsigned int i;
-	size_t len = 0;
-	char *_all_args, *all_args;
-	char *args_file = strdup(output_file);
+	char args_file[MAX_STRING];
+	strcpy(args_file, output_file);
 	strcat(args_file, ".args");
 	FILE *fargs = fopen(args_file, "w");
 	if (fargs == NULL) {
@@ -515,24 +514,12 @@ void SaveArgs(int argc, char **argv) {
 		return;
 	}
 	
-	for(i=1; i<argc; i++) {
-		len += strlen(argv[i]);
-	}
-	
-	_all_args = all_args = (char *)malloc(len+argc-1);
-	
-	for(i=1; i<argc; i++) {
-		memcpy(_all_args, argv[i], strlen(argv[i]));
-		_all_args += strlen(argv[i])+1;
-		*(_all_args-1) = ' ';
-	}
-	*(_all_args-1) = 0;
-	
-	fprintf(fargs, "%s\n", all_args);
+	for(i=1; i<argc; i++)
+		fprintf(fargs, "%s ", argv[i]);
+
+	fprintf(fargs, "\n");
 	fclose(fargs);
-	
-	free(all_args);
-	
+
 	return;
 }
 
