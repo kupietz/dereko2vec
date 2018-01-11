@@ -6,8 +6,9 @@ CFLAGS = -lm -pthread -O3 -march=k8 -mtune=k8 -Wall -funroll-loops
 
 all: word2vec cngram2vec weightedWord2vec wordless2vec word2phrase distance word-analogy compute-accuracy distance_txt distance_fast kmeans_txt
 
-word2vec : word2vecExt.c
-	$(CC) word2vecExt.c -o word2vec $(CFLAGS)
+word2vec : word2vecExt.c makefile ../../CollocatorDB/libcollocatordb.a
+	$(CC) $(CFLAGS) word2vecExt.c ../../CollocatorDB/libcollocatordb.a /vol/work/kupietz/rocksdb/librocksdb.a -o word2vec -I../../CollocatorDB -L../../CollocatorDB -L/usr/local/lib -lstdc++ -lm -lrt -lsnappy -lz -lbz2 -llz4 -lzstd
+
 weightedWord2vec : weightedWord2vec.c
 	$(CC) weightedWord2vec.c -o weightedWord2vec $(CFLAGS)
 cngram2vec : cngram2vec.c

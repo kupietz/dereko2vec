@@ -19,6 +19,7 @@
 #include <unistd.h>
 #include <math.h>
 #include <pthread.h>
+#include <collocatordb.h>
 
 #define MAX_STRING 100
 #define EXP_TABLE_SIZE 1000
@@ -82,6 +83,8 @@ int nce = 0;
 //param caps
 real CAP_VALUE = 50;
 int cap = 0;
+
+COLLOCATORDB *cdb = NULL;
 
 void capParam(real* array, int index) {
 	if (array[index] > CAP_VALUE)
@@ -1677,6 +1680,17 @@ void *TrainModelThread(void *id) {
 									+ window_offset];
 					}
 			}
+		} else if(type == 5) {
+			for (a = b; a < window * 2 + 1 - b; a++) if (a != window) {
+				c = sentence_position - window + a;
+				if (c < 0) continue;
+				if (c >= sentence_length) continue;
+				last_word = sen[c];
+				if (last_word == -1) continue;
+				inc_collocator(cdb, word, last_word, a - window);
+				//				printf("%2d: storing %s %s - %d\n", id, vocab[word].word, vocab[last_word].word, (int) a - window);
+				// cw++;
+			}
 		} else {
 			printf("unknown type %i", type);
 			exit(0);
@@ -1813,7 +1827,8 @@ void TrainModel() {
 		clock_t now = time(NULL);
 		clock_t now_clock = clock();
 		printf("\nFinished: %s - user: %lds - real: %lds\n", currentDateTime(timebuf, 0), (now_clock - start_clock) / CLOCKS_PER_SEC,  now - start);
-		if(type == 5) {
+		if(type == 5) // don't save vectorsmfor classic collocators
+			return;
 		printf("Saving vectors to %s ...", output_file);
 		fflush(stdout);
 	}
@@ -1967,7 +1982,7 @@ void print_help() {
 		printf("\t\tShow words with their collocators starting from word rank <int>. Depends on -read-vocab and -read-net.\n");
 		printf("\t-type <int>\n");
 		printf(
-				"\t\tType of embeddings (0 for cbow, 1 for skipngram, 2 for cwindow, 3 for structured skipngram, 4 for senna type)\n");
+				"\t\tType of embeddings (0 for cbow, 1 for skipngram, 2 for cwindow, 3 for structured skipngram, 4 for senna type, 5 for store positional bigramms)\n");
 		printf("\t-cap <int>\n");
 		printf(
 				"\t\tlimit the parameter values to the range [-50, 50]; default is 0 (off)\n");
@@ -2050,6 +2065,10 @@ int main(int argc, char **argv) {
 		cap = atoi(argv[i + 1]);
 	if (type == 0 || type == 2 || type == 4)
 		alpha = 0.05;
+	if (type==5) {
+		sample = 0;
+		cdb = open_collocatordb_for_write(output_file);
+	}
 	if ((i = ArgPos((char *) "-alpha", argc, argv)) > 0)
 		alpha = atof(argv[i + 1]);
 	vocab = (struct vocab_word *) calloc(vocab_max_size,
