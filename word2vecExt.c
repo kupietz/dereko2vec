@@ -54,7 +54,7 @@ long long train_words = 0, word_count_actual = 0, iter = 5, file_size = 0,
 real alpha = 0.025, starting_alpha, sample = 1e-3;
 real *syn0, *syn1, *syn1neg, *syn1nce, *expTable;
 real avgWordLength=0;
-clock_t start;
+clock_t start, start_clock;
 
 real *syn1_window, *syn1neg_window, *syn1nce_window;
 int w_offset, window_layer_size;
@@ -731,14 +731,14 @@ void *MonitorThread(void *id) {
 		if(n == 0)
 			break;
 		real finished_portion = (real) sum / (float) (file_size * iter);
-		long long now = clock();
-		long long elapsed = (now - start) / CLOCKS_PER_SEC / num_threads;
-		long long ttg = ((1.0 / finished_portion) * (real) elapsed - elapsed) * ((real) num_threads / n) ;
+		long long now = time(NULL);
+		long long elapsed = (now - start);
+		long long ttg = ((1.0 / finished_portion) * (real) elapsed - elapsed);
 
-		printf("\rAlpha: %.3f  Done: %.2f%% with %.2fKB/t/s  TE: %llds  TTG: %llds  ETA: %s\033[K",
+		printf("\rAlpha: %.3f  Done: %.2f%% with %.2fKB/s  TE: %llds  TTG: %llds  ETA: %s\033[K",
 					 alpha,
 					 finished_portion * 100,
-					 (float) sum / elapsed / num_threads / 1000,
+					 (float) sum / elapsed / 1000,
 					 elapsed,
 					 ttg,
 					 currentDateTime(timebuf, ttg)
@@ -1800,7 +1800,8 @@ void TrainModel() {
 		InitUnigramTable();
 	if (negative_classes_file[0] != 0)
 		InitClassUnigramTable();
-	start = clock();
+	start = time(NULL);
+	start_clock = clock();
 	for (a = 0; a < num_threads; a++)
 		pthread_create(&pt[a], NULL, TrainModelThread, (void *) a);
 	if(debug_mode > 1)
@@ -1809,8 +1810,10 @@ void TrainModel() {
 		pthread_join(pt[a], NULL);
 	if(debug_mode > 1) {
 		pthread_join(pt[num_threads], NULL);
-		clock_t now = clock();
-		printf("\nFinished: %s - user: %lds - real: %lds\n", currentDateTime(timebuf, 0), (now-start) / CLOCKS_PER_SEC / num_threads,  (now-start) / CLOCKS_PER_SEC);
+		clock_t now = time(NULL);
+		clock_t now_clock = clock();
+		printf("\nFinished: %s - user: %lds - real: %lds\n", currentDateTime(timebuf, 0), (now_clock - start_clock) / CLOCKS_PER_SEC,  now - start);
+		if(type == 5) {
 		printf("Saving vectors to %s ...", output_file);
 		fflush(stdout);
 	}
