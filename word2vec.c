@@ -17,6 +17,7 @@
 #include <string.h>
 #include <math.h>
 #include <pthread.h>
+#include "collocatordb.h"
 
 #define MAX_STRING 100
 #define EXP_TABLE_SIZE 1000
@@ -68,6 +69,8 @@ int nce = 0;
 //param caps
 real CAP_VALUE = 50;
 int cap = 0;
+
+COLLOCATORS *cdb = null;
 
 void capParam(real* array, int index){
 	if(array[index] > CAP_VALUE) 
@@ -1084,7 +1087,17 @@ void *TrainModelThread(void *id) {
           for (c = 0; c < layer1_size; c++) syn0[c + last_word * layer1_size] += neu1e[c + window_offset];
         }
       }
-    }
+    } else if(type == 5) {
+      for (a = b; a < window * 2 + 1 - b; a++) if (a != window) {
+        c = sentence_position - window + a;
+        if (c < 0) continue;
+        if (c >= sentence_length) continue;
+        last_word = sen[c];
+        if (last_word == -1) continue;
+				printf("storing %s %s - %d\n", vocab[word].word, vocab[last_word].word, a - window);
+        cw++;
+      }
+		}
     else{
 	printf("unknown type %i", type);
 	exit(0);
@@ -1229,7 +1242,7 @@ int main(int argc, char **argv) {
     printf("\t-read-vocab <file>\n");
     printf("\t\tThe vocabulary will be read from <file>, not constructed from the training data\n");
     printf("\t-type <int>\n");
-    printf("\t\tType of embeddings (0 for cbow, 1 for skipngram, 2 for cwindow, 3 for structured skipngram, 4 for senna type)\n");
+    printf("\t\tType of embeddings (0 for cbow, 1 for skipngram, 2 for cwindow, 3 for structured skipngram, 4 for senna type, 5 for store positional bigramms)\n");
     printf("\t-cap <int>\n");
     printf("\t\tlimit the parameter values to the range [-50, 50]; default is 0 (off)\n");
     printf("\nExamples:\n");
@@ -1260,6 +1273,10 @@ int main(int argc, char **argv) {
   if ((i = ArgPos((char *)"-classes", argc, argv)) > 0) classes = atoi(argv[i + 1]);
   if ((i = ArgPos((char *)"-cap", argc, argv)) > 0) cap = atoi(argv[i + 1]);
   if (type==0 || type==2 || type==4) alpha = 0.05;
+  if (type==5) {
+		sample = 0;
+		cdb = open_collocators(output_file);
+	}
   if ((i = ArgPos((char *)"-alpha", argc, argv)) > 0) alpha = atof(argv[i + 1]);
   vocab = (struct vocab_word *)calloc(vocab_max_size, sizeof(struct vocab_word));
   vocab_hash = (int *)calloc(vocab_hash_size, sizeof(int));
