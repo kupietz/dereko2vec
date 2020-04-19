@@ -4,10 +4,13 @@ CFLAGS = -lm -pthread -O3 -march=k8 -mtune=k8 -Wall -funroll-loops
 #CFLAGS = -m64 -march=k8 -mtune=k8 -lm -pthread -O3 -Wall -funroll-loops 
 
 
-all: word2vec cngram2vec weightedWord2vec wordless2vec word2phrase distance word-analogy compute-accuracy distance_txt distance_fast kmeans_txt
+all: word2vec word2vec1 cngram2vec weightedWord2vec wordless2vec word2phrase distance word-analogy compute-accuracy distance_txt distance_fast kmeans_txt
 
-word2vec : word2vecExt.c makefile ../../CollocatorDB/libcollocatordb.a
-	$(CC) $(CFLAGS) word2vecExt.c ../../CollocatorDB/libcollocatordb.a /vol/work/kupietz/rocksdb/librocksdb.a -o word2vec -I../../CollocatorDB -L../../CollocatorDB -L/usr/local/lib -lstdc++ -lm -lrt -lsnappy -lz -lbz2 -llz4 -lzstd
+word2vec : word2vecExt.c makefile /vol/work/kupietz/Work2/kl/trunk/CollocatorDB/libcollocatordb.a
+	$(CC) $(CFLAGS) word2vecExt.c /vol/work/kupietz/Work2/kl/trunk/CollocatorDB/libcollocatordb.a /vol/work/kupietz/rocksdb/librocksdb.a -o word2vec -I/vol/work/kupietz/Work2/kl/trunk/CollocatorDB -L/vol/work/kupietz/Work2/kl/trunk/CollocatorDB -L/usr/local/lib -lstdc++ -lm -lrt -lsnappy -lz -lbz2 -llz4 -lzstd
+
+word2vec1 : word2vecExt1.c makefile /vol/work/kupietz/Work2/kl/trunk/CollocatorDB/libcollocatordb.a
+	$(CC) $(CFLAGS) word2vecExt1.c /vol/work/kupietz/Work2/kl/trunk/CollocatorDB/libcollocatordb.a /vol/work/kupietz/rocksdb/librocksdb.a -o word2vec1 -I/vol/work/kupietz/Work2/kl/trunk/CollocatorDB -L/vol/work/kupietz/Work2/kl/trunk/CollocatorDB -L/usr/local/lib -lstdc++ -lm -lrt -lsnappy -lz -lbz2 -llz4 -lzstd
 
 weightedWord2vec : weightedWord2vec.c
 	$(CC) weightedWord2vec.c -o weightedWord2vec $(CFLAGS)
@@ -30,4 +33,4 @@ word-analogy : word-analogy.c
 compute-accuracy : compute-accuracy.c
 	$(CC) compute-accuracy.c -o compute-accuracy $(CFLAGS)
 clean:
-	rm -rf word2vec weightedWord2vec cngram2vec wiord2phrase distance word-analogy compute-accuracy distance_txt kmeans_txt
+	rm -rf word2vec word2vec1 weightedWord2vec cngram2vec wiord2phrase distance word-analogy compute-accuracy distance_txt kmeans_txt
