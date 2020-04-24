@@ -427,8 +427,19 @@ void ReadVocab() {
 		i++;
 	}
 	fclose(fin);
+	// this is just for determining train_words by avgWordLength
+	fin = fopen(train_file, "rb");
+	if (fin == NULL) {
+		printf("ERROR: training data file not found!\n");
+		exit(1);
+	}
+	fseek(fin, 0, SEEK_END);
+	file_size = ftell(fin);
+	fclose(fin);
 	SortVocab();
-
+	train_words = file_size / avgWordLength;
+	if(debug_mode > 0)
+		printf("Estimated words in train file: %'lld\n", train_words);
 	if (tc > 0) {
 		// recalculate counts for the current corpus
 		// adapted from LearnVocabFromTrainFile()
@@ -441,13 +452,13 @@ void ReadVocab() {
 		// reset vocabulary counts
 		for (a = 0; a < vocab_size; a++)
 			vocab[a].cn = 0;
-		train_words = 0;
+		long long train_words1 = 0;
 		while (1) {
 			ReadWord(word, fin);
 			if (feof(fin))
 				break;
-			if ((debug_mode > 1) && (train_words % 100000 == 0)) {
-				printf("%lldK%c", train_words / 1000, 13);
+			if ((debug_mode > 1) && (train_words1 % 100000 == 0)) {
+				printf("%lldK%c", train_words1 / 1000, 13);
 				fflush(stdout);
 			}
 			i = SearchVocab(word);
@@ -455,27 +466,24 @@ void ReadVocab() {
 			// because it may have been cut off due to minfreq.
 			if (i >= 0) {
 				vocab[i].cn++;
-				train_words++;
+				train_words1++;
 			}
 		}
 		// we cannot have 0 counts.
 		for (a = 0; a < vocab_size; a++) {
 			if(vocab[a].cn == 0) {
 				vocab[a].cn = 1;
-				train_words++;
+				train_words1++;
 			}
 		}
 		if (debug_mode > 0) {
 			printf("Vocab size: %lld\n", vocab_size);
-			printf("Words in current train file: %'lld\n", train_words);
+			printf("Words in current train file: %'lld\n", train_words1);
 		}
 		fseek(fin, 0, SEEK_END);
 		file_size = ftell(fin);
 		fclose(fin);
 	}
-	train_words = file_size / avgWordLength;
-	if(debug_mode > 0)
-		printf("Estimated words in train file: %'lld\n", train_words);
 }
 
 void InitClassUnigramTable() {
