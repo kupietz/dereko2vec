@@ -391,8 +391,8 @@ void LearnVocabFromTrainFile() {
 	}
 	SortVocab();
 	if (debug_mode > 0) {
-		printf("Vocab size: %lld\n", vocab_size);
-		printf("Words in train file: %lld\n", train_words);
+		printf("Vocab size: %'lld\n", vocab_size);
+		printf("Words in train file: %'lld\n", train_words);
 	}
 	file_size = ftell(fin);
 	fclose(fin);
@@ -427,7 +427,6 @@ void ReadVocab() {
 		i++;
 	}
 	fclose(fin);
-	// this is just for determining train_words by avgWordLength
 	fin = fopen(train_file, "rb");
 	if (fin == NULL) {
 		printf("ERROR: training data file not found!\n");
@@ -437,7 +436,13 @@ void ReadVocab() {
 	file_size = ftell(fin);
 	fclose(fin);
 	SortVocab();
+	if (debug_mode > 0) {
+		printf("Vocab size: %'lld\n", vocab_size);
+		printf("Words in vocab's train file: %'lld\n", train_words);
+		printf("Avg. word length in vocab's train file: %.2f\n", avgWordLength);
+	}
 	train_words = file_size / avgWordLength;
+	// PF: so even with tc=0, alpha will be appropriately adapted?
 	if(debug_mode > 0)
 		printf("Estimated words in train file: %'lld\n", train_words);
 	if (tc > 0) {
@@ -452,13 +457,13 @@ void ReadVocab() {
 		// reset vocabulary counts
 		for (a = 0; a < vocab_size; a++)
 			vocab[a].cn = 0;
-		long long train_words1 = 0;
+		train_words = 0;
 		while (1) {
 			ReadWord(word, fin);
 			if (feof(fin))
 				break;
-			if ((debug_mode > 1) && (train_words1 % 100000 == 0)) {
-				printf("%lldK%c", train_words1 / 1000, 13);
+			if ((debug_mode > 1) && (train_words % 100000 == 0)) {
+				printf("%lldK%c", train_words / 1000, 13);
 				fflush(stdout);
 			}
 			i = SearchVocab(word);
@@ -466,19 +471,19 @@ void ReadVocab() {
 			// because it may have been cut off due to minfreq.
 			if (i >= 0) {
 				vocab[i].cn++;
-				train_words1++;
+				train_words++;
 			}
 		}
 		// we cannot have 0 counts.
 		for (a = 0; a < vocab_size; a++) {
 			if(vocab[a].cn == 0) {
 				vocab[a].cn = 1;
-				train_words1++;
+				train_words++;
 			}
 		}
 		if (debug_mode > 0) {
 			printf("Vocab size: %lld\n", vocab_size);
-			printf("Words in current train file: %'lld\n", train_words1);
+			printf("Words in current train file: %'lld\n", train_words);
 		}
 		fseek(fin, 0, SEEK_END);
 		file_size = ftell(fin);
