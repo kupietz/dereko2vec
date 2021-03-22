@@ -2,16 +2,16 @@ CC = gcc
 #Using -Ofast instead of -O3 might result in faster code, but is supported only by newer GCC versions
 CFLAGS = -lm -pthread -O3 -march=native -mtune=native -Wall -funroll-loops
 #CFLAGS = -m64 -march=k8 -mtune=k8 -lm -pthread -O3 -Wall -funroll-loops 
-STATICCDB=../../CollocatorDB
+STATICCDB=/usr/local/lib64
 ROCKSDB=/usr/local/lib
 
 all: word2vec word2vec1 cngram2vec weightedWord2vec wordless2vec word2phrase distance word-analogy compute-accuracy distance_txt distance_fast kmeans_txt
 
-word2vec : word2vecExt.c makefile $(STATICCDB)/libcollocatordb.a
-	$(CC) $(CFLAGS) word2vecExt.c $(STATICCDB)/libcollocatordb.a $(ROCKSDB)/librocksdb.a -o word2vec -I$(STATICCDB) -L$(STATICCDB) -L/usr/local/lib -ldl -lstdc++ -lm -lrt -lsnappy -lz -lbz2 -llz4 -lzstd
+word2vec : word2vecExt.c makefile $(STATICCDB)/libcollocatordb_static.a
+	$(CC) $(CFLAGS) word2vecExt.c $(STATICCDB)/libcollocatordb_static.a $(ROCKSDB)/librocksdb.a -o word2vec -I$(STATICCDB) -L$(STATICCDB) -L/usr/local/lib -ldl -lstdc++ -lm -lrt -lsnappy -lz -lbz2 -llz4 -lzstd
 
-word2vec1 : word2vecExt1.c makefile $(STATICCDB)/libcollocatordb.a
-	$(CC) $(CFLAGS) word2vecExt1.c $(STATICCDB)/libcollocatordb.a $(ROCKSDB)/librocksdb.a -o word2vec1 -I$(STATICCDB) -L$(STATICCDB) -L/usr/local/lib -ldl -lstdc++ -lm -lrt -lsnappy -lz -lbz2 -llz4 -lzstd
+word2vec1 : word2vecExt1.c makefile $(STATICCDB)/libcollocatordb_static.a
+	$(CC) $(CFLAGS) word2vecExt1.c $(STATICCDB)/libcollocatordb_static.a $(ROCKSDB)/librocksdb.a -o word2vec1 -I$(STATICCDB) -L$(STATICCDB) -L/usr/local/lib -ldl -lstdc++ -lm -lrt -lsnappy -lz -lbz2 -llz4 -lzstd
 
 weightedWord2vec : weightedWord2vec.c
 	$(CC) weightedWord2vec.c -o weightedWord2vec $(CFLAGS)
