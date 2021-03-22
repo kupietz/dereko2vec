@@ -1920,7 +1920,7 @@ int ArgPos(char *str, int argc, char **argv) {
 }
 
 void print_help() {
-		printf("WORD VECTOR estimation toolkit v 0.1c\n\n");
+		printf("WORD VECTOR estimation toolkit v 0.9.0\n\n");
 		printf("Options:\n");
 		printf("Parameters for training:\n");
 		printf("\t-train <file>\n");
@@ -1988,7 +1988,7 @@ void print_help() {
 				"\t\tlimit the parameter values to the range [-50, 50]; default is 0 (off)\n");
 		printf("\nExamples:\n");
 		printf(
-				"./word2vec -train data.txt -output vec.txt -size 200 -window 5 -sample 1e-4 -negative 5 -hs 0 -binary 0 -type 1 -iter 3\n\n");
+				"./dereko2vec -train data.txt -output vec.txt -size 200 -window 5 -sample 1e-4 -negative 5 -hs 0 -binary 0 -type 1 -iter 3\n\n");
 }
 
 int main(int argc, char **argv) {
