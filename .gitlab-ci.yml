@@ -47,8 +47,8 @@ build:
   artifacts:
     paths:
       - build/dereko2vec
-      - *.so
-      - *.a
+      - "*.so"
+      - "*.a"
 
   cache:
     paths:
