@@ -1,6 +1,6 @@
 image: gcc
 
-build:
+build-and-test:
   stage: build
   before_script:
     - pwd
@@ -36,27 +36,16 @@ build:
     - cd ../..
 
   script:
-    - start_section install_dereko2vec "Building and installing dereko2vec"
+    - start_section build_dereko2vec "Building and testing dereko2vec"
     - pwd
     - mkdir build
     - cd build
     - cmake ..
     - make
-    - end_section install_dereko2vec
+    - ctest --extra-verbose
+    - end_section build_dereko2vec
 
   artifacts:
     paths:
       - build/dereko2vec
-      - "*.so"
-      - "*.a"
-
-  cache:
-    paths:
-      - "*.o"
-
-# run tests using the binary built before
-test:
-  stage: test
-  script:
-    - ctest --extra-verbose
 
