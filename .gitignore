@@ -7,3 +7,4 @@ bin/
 .*\.log
 .*LOG
 LOG.*
+!.gitlab-ci.yml

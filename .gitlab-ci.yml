@@ -1,0 +1,38 @@
+image: gcc
+
+build:
+  stage: build
+  before_script:
+    - apt update && apt -y install cmake libgflags-dev libsnappy-dev zlib1g-dev libbz2-dev liblz4-dev libzstd-dev libomp-dev
+    - curl -L https://github.com/facebook/rocksdb/archive/refs/tags/v5.11.3.tar.gz | tar zx
+    - cd rocksdb-5.11.3
+    - export PROCS=$(cat /proc/cpuinfo | grep -c processor)
+    - make -j $PROCS static_lib DISABLE_WARNING_AS_ERROR=1 WARNING_FLAGS=-w
+    - make install-static DISABLE_WARNING_AS_ERROR=1 WARNING_FLAGS=-w
+    - make -j $PROCS shared_lib DISABLE_WARNING_AS_ERROR=1 WARNING_FLAGS=-w
+    - make install-shared DISABLE_WARNING_AS_ERROR=1 WARNING_FLAGS=-w
+    - cd ..
+    - git clone "https://korap.ids-mannheim.de/gerrit/private/collocatordb"
+    - cd collocatordb
+    - mkdir -p build
+    - cd build
+    - cmake ..
+    - make && make install # && ctest --extra-verbose
+  script:
+    - mkdir build
+    - cd build
+    - cmake ..
+    - make
+  artifacts:
+    paths:
+      - build/dereko2vec
+  cache:
+    paths:
+      - "*.o"
+
+# run tests using the binary built before
+test:
+  stage: test
+  script:
+    - ctest --extra-verbose
+
