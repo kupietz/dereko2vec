@@ -2,6 +2,11 @@ image: gcc
 
 build-and-test:
   stage: build
+  cache:
+    - key: one-key-to-rule-them-all
+      paths:
+        - rocksdb-5.11.3/
+        - collocatordb/
   before_script:
     - pwd
     - source `find .. -name section_helper.sh`
@@ -21,6 +26,7 @@ build-and-test:
     - start_section install_rocksdb_shared "Building and installing rocksdb-shared"
     - make -j $PROCS shared_lib DISABLE_WARNING_AS_ERROR=1 WARNING_FLAGS=-w
     - make install-shared DISABLE_WARNING_AS_ERROR=1 WARNING_FLAGS=-w
+    - ldconfig
     - cd ..
     - end_section rocksdb_shared
 
@@ -32,6 +38,7 @@ build-and-test:
     - cmake ..
     - make
     - make install # && ctest --extra-verbose
+    - ldconfig
     - end_section install_collocatordb
     - cd ../..
 
