@@ -5,7 +5,7 @@ more accurate ETA prognosis.
 ## Installation
 ### Dependencies
 * cmake3
-* [libcollocaltordb](https://korap.ids-mannheim.de/gerrit/plugins/gitiles/private/collocatordb) >= v1.3.0
+* [libcollocaltordb](https://korap.ids-mannheim.de/gerrit/plugins/gitiles/ids-kl/collocatordb) >= v1.3.0
 ### Build and install
 ```
 cd dereko2vec
