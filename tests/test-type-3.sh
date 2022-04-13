@@ -15,6 +15,7 @@ ${BUILDDIR}/dereko2vec -train ${DATADIR}/wpd19_10000.w2vinput -output ${DESTDIR}
   -size 200 -binary 1 -window 5 -negative 10 -threads 16 -iter 5 -min-count 2 \
   > >(tee -a ${BUILDDIR}/stdout.log) 2> >(tee -a ${BUILDDIR}/stderr.log >&2)
 
+
 stdoutlog=$(cat ${BUILDDIR}/stdout.log)
 assert_contain "$stdoutlog" "ETA:"
 if [ "$?" == 0 ]; then
@@ -24,6 +25,11 @@ else
 fi
 
 assert_contain "$stdoutlog" "Finished"
+if [ "$?" == 0 ]; then
+  log_success "dereko2vec can build word embedding model"
+else
+  log_failure "dereko2vec cannot build word embedding model"
+fi
 
 observed=$(cat ${DESTDIR}/wpd19_10000.vocab)
 #expected=$(cat ${DATADIR}/wpd19_10000.vocab)
@@ -48,4 +54,16 @@ if [ "$?" == 0 ]; then
   log_success "neighbours of Grund do not contain gestern"
 else
   log_failure "neighbours of Grund should not contain gestern"
+fi
+
+${BUILDDIR}/dereko2vec -train ${DATADIR}/wpd19_10000.w2vinput -output ${DESTDIR}/wpd19_10000.rocksdb -type 5 \
+  -read-vocab ${DESTDIR}/wpd19_10000.vocab -threads 8 \
+  > >(tee -a ${BUILDDIR}/stdout.log) 2> >(tee -a ${BUILDDIR}/stderr.log >&2)
+
+stdoutlog=$(cat ${BUILDDIR}/stdout.log)
+assert_contain "$stdoutlog" "Finished"
+if [ "$?" == 0 ]; then
+  log_success "dereko2vec can build count based collocation database"
+else
+  log_failure "dereko2vec cannot build count based collocation database"
 fi
