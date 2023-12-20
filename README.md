@@ -31,6 +31,13 @@ The -type argument is a integer that defines the architecture to use. These are 
 ./dereko2vec -train input_file -output embedding_file -type 0 -size 50 -window 5 -negative 10 -nce 0 -hs 0 -sample 1e-4 -threads 1 -binary 1 -iter 5 -cap 0
 ```
 
+## Generate dereko2vec training input files from KorAP-XML ZIPs
+
+The [KorAP-XML-CoNLL-U](https://github.com/KorAP/KorAP-XML-CoNLL-U) tool can be used to generate input files for dereko2vec from KorAP-XML ZIPs using its tokenization and setence boundary information, for example:
+
+```
+korapxml2conllu --word2vec wpd19.zip > wpd19.w2vinput
+```
 
 ## References
 ```
