@@ -44,9 +44,9 @@ observed=$(echo -e "Grund\nEXIT" | ${BUILDDIR}/distance ${DESTDIR}/wpd19_10000.v
 
 assert_contain "$observed" "Zusammenhang"
 if [ "$?" == 0 ]; then
-  log_success "neighbours of Grund contain Reaktion"
+  log_success "neighbours of Grund contain Zusammenhang"
 else
-  log_failure "neighbours of Grund should contain Reaktion"
+  log_failure "neighbours of Grund should contain Zusammenhang"
 fi
 
 assert_not_contain "$observed" "gestern"
