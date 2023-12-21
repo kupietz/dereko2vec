@@ -1,18 +1,39 @@
 image: gcc
 
+variables:
+  # Set `CCACHE_BASEDIR` and `CCACHE_DIR` to point `ccache` towards the cached
+  # path on the gitlab-runner. This enables to cache the output of `ccache`
+  # between various runs.
+  CCACHE_BASEDIR: "${CI_PROJECT_DIR}"
+  CCACHE_DIR: "${CI_PROJECT_DIR}/ccache"
+  # Set `ccache` to `content` to prevent rebuilding of the CI/CD containers to
+  # trigger a recreate of the cache. By using `content` the compiler's `mtime`
+  # is not considered as part of the hash.
+  CCACHE_COMPILERCHECK: "content"
+  # Enable caching for `apt-get`.
+  APT_CACHE_DIR: "${CI_PROJECT_DIR}/apt-cache"
+  # Export `noninteractive` frontend to prevent requesting user input.
+  DEBIAN_FRONTEND: "noninteractive"
+
 build-and-test:
   stage: build
   cache:
-    - key: one-key-to-rule-them-all
-      paths:
-        - rocksdb/
-        - collocatordb/
+    # Cache is shared between branches, but has a unique cache per job.
+    key: dereko2vec
+    paths:
+      # Note: directories should align with `$APT_CACHE_DIR` and `$CCACHE_DIR`.
+      - apt-cache/
+      - ccache/
+
   before_script:
     - pwd
     - source `find .. -name section_helper.sh`
 
     - start_section install_linux_packages "Installing missing Linux packages"
-    - apt update && apt -y install cmake libgflags-dev libsnappy-dev zlib1g-dev libbz2-dev liblz4-dev libzstd-dev libomp-dev
+    - mkdir -pv $APT_CACHE_DIR ccache
+    - apt-get update && apt-get -o dir::cache::archives="$APT_CACHE_DIR" -y install ccache cmake libgflags-dev libsnappy-dev zlib1g-dev libbz2-dev liblz4-dev libzstd-dev libomp-dev
+    - ln -s $(which ccache) /usr/local/sbin/gcc
+    - ln -s $(which ccache) /usr/local/sbin/g++
     - end_section install_linux_packages
 
     - start_section install_rocksdb_static "Building and installing rocksdb-static"
@@ -21,6 +42,7 @@ build-and-test:
     - for f in db/compaction_iteration_stats.h include/rocksdb/utilities/checkpoint.h util/string_util.h; do echo $f; sed -Ei 's|^#pragma once|\0\n#include <cstdint>|' "$f"; done
     - export PROCS=$(nproc)
     - make -j $PROCS static_lib DISABLE_WARNING_AS_ERROR=1 WARNING_FLAGS=-w
+    - ccache --show-stats
     - make install-static DISABLE_WARNING_AS_ERROR=1 WARNING_FLAGS=-w
     - end_section install_rocksdb_static
 
@@ -36,8 +58,9 @@ build-and-test:
     - cd collocatordb
     - mkdir -p build
     - cd build
-    - cmake ..
+    - cmake -DCMAKE_C_COMPILER_LAUNCHER=ccache ..
     - make
+    - ccache --show-stats
     - make install # && ctest --extra-verbose
     - ldconfig
     - end_section install_collocatordb
@@ -48,8 +71,9 @@ build-and-test:
     - pwd
     - mkdir build
     - cd build
-    - cmake ..
+    - cmake -DCMAKE_C_COMPILER_LAUNCHER=ccache ..
     - make
+    - ccache --show-stats
     - ctest --extra-verbose
     - end_section build_dereko2vec
 
