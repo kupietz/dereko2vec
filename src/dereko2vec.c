@@ -508,7 +508,7 @@ void InitClassUnigramTable() {
 	}
 }
 
-void SaveArgs(int argc, char **argv) {
+void SaveArgs(unsigned int argc, char **argv) {
 	unsigned int i;
 	char args_file[MAX_STRING];
 	strcpy(args_file, output_file);
