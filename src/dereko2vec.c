@@ -1711,7 +1711,7 @@ void *TrainModelThread(void *id) {
 void ShowCollocations() {
 	long a, b, c, d, e, window_offset, target, max_target=0, maxmax_target;
 	real f, max_f, maxmax_f;
-	real *target_sums, bestf[MAX_CC], worstbest;
+	real *target_sums=0L, bestf[MAX_CC], worstbest;
 	long besti[MAX_CC];
 	int N = 10, bestp[MAX_CC];
 	a = posix_memalign((void **) &target_sums, 128, vocab_size * sizeof(real));
