@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.9)
-project(dereko2vec VERSION 0.9.0 DESCRIPTION "Fork from wang2vec with extensions for re-training and count based models")
+project(dereko2vec VERSION 0.9.1 DESCRIPTION "Fork from wang2vec with extensions for re-training and count based models")
 set(CMAKE_VERBOSE_MAKEFILE on)
 if (CMAKE_BUILD_TYPE MATCHES Debug)
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -lm -g -O0 -Wall -Wextra -Wno-unused-parameter -Wno-unused-variable -Wno-unused-function -Wno-unused-but-set-variable -Wno-unused-but-set-parameter -Wno-unused-value -Wno-unused-result")
