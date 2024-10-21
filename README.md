@@ -45,6 +45,14 @@ The [KorAP-XML-CoNLL-U](https://github.com/KorAP/KorAP-XML-CoNLL-U) tool can be 
 korapxml2conllu --word2vec wpd19.zip > wpd19.w2vinput
 ```
 
+## Retrain existing model with new data
+
+For example:
+
+```bash
+dereko2vec -train new.traindata -output new.vecs -save-net new.net -type 3 -size 200 -window 5 -negative 10 -threads 44 -binary 1 -iter 100 -read-vocab old.vocab -read-net old.net
+```
+
 ## References
 
 ```bash
