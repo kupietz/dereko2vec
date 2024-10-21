@@ -1924,7 +1924,7 @@ int ArgPos(char *str, int argc, char **argv) {
 }
 
 void print_help() {
-		printf("WORD VECTOR estimation toolkit v 0.9.0\n\n");
+		printf("WORD VECTOR estimation toolkit v 0.9.1\n\n");
 		printf("Options:\n");
 		printf("Parameters for training:\n");
 		printf("\t-train <file>\n");
