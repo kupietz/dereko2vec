@@ -71,8 +71,8 @@ build-and-test:
     - pwd
     - mkdir build
     - cd build
-    - cmake -DCMAKE_C_COMPILER_LAUNCHER=ccache ..
-    - make
+    - cmake -DSTATIC_DEREKO2VEC=ON -DCMAKE_C_COMPILER_LAUNCHER=ccache ..
+    - make || (cmake -DCMAKE_C_COMPILER_LAUNCHER=ccache .. && make)
     - ccache --show-stats
     - ctest --extra-verbose
     - end_section build_dereko2vec
