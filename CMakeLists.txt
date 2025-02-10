@@ -12,9 +12,11 @@ find_library(ZLIB_STATIC NAMES libz.a)
 find_library(BZ2_STATIC NAMES libbz2.a)
 find_library(LZ4_STATIC NAMES liblz4.a)
 find_library(ZSTD_STATIC NAMES libzstd.a)
+find_library(SNAPPY_STATIC NAMES libsnappy.a)
 
 # Set each library, preferring static if found
-set(ADDITIONAL_LIBS ${ADDITIONAL_LIBS} pthread rt snappy)
+set(ADDITIONAL_LIBS ${ADDITIONAL_LIBS} pthread rt)
+
 if(ZLIB_STATIC)
     set(ADDITIONAL_LIBS ${ADDITIONAL_LIBS} ${ZLIB_STATIC})
 else()
@@ -37,6 +39,12 @@ if(ZSTD_STATIC)
     set(ADDITIONAL_LIBS ${ADDITIONAL_LIBS} ${ZSTD_STATIC})
 else()
     set(ADDITIONAL_LIBS ${ADDITIONAL_LIBS} zstd)
+endif()
+
+if(SNAPPY_STATIC)
+    set(ADDITIONAL_LIBS ${ADDITIONAL_LIBS} ${SNAPPY_STATIC})
+else()
+    set(ADDITIONAL_LIBS ${ADDITIONAL_LIBS} snappy)
 endif()
 
 set(ADDITIONAL_LIBS ${ADDITIONAL_LIBS} stdc++ dl)
