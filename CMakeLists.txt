@@ -6,7 +6,41 @@ if (CMAKE_BUILD_TYPE MATCHES Debug)
 else ()
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -lm -pthread -O3 -march=native -mtune=native -Wall -funroll-loops")
 endif ()
-set(ADDITIONAL_LIBS ${ADDITIONAL_LIBS} pthread rt snappy z bz2 lz4 zstd stdc++ dl)
+
+# First, try to find static versions
+find_library(ZLIB_STATIC NAMES libz.a)
+find_library(BZ2_STATIC NAMES libbz2.a)
+find_library(LZ4_STATIC NAMES liblz4.a)
+find_library(ZSTD_STATIC NAMES libzstd.a)
+
+# Set each library, preferring static if found
+set(ADDITIONAL_LIBS ${ADDITIONAL_LIBS} pthread rt snappy)
+if(ZLIB_STATIC)
+    set(ADDITIONAL_LIBS ${ADDITIONAL_LIBS} ${ZLIB_STATIC})
+else()
+    set(ADDITIONAL_LIBS ${ADDITIONAL_LIBS} z)
+endif()
+
+if(BZ2_STATIC)
+    set(ADDITIONAL_LIBS ${ADDITIONAL_LIBS} ${BZ2_STATIC})
+else()
+    set(ADDITIONAL_LIBS ${ADDITIONAL_LIBS} bz2)
+endif()
+
+if(LZ4_STATIC)
+    set(ADDITIONAL_LIBS ${ADDITIONAL_LIBS} ${LZ4_STATIC})
+else()
+    set(ADDITIONAL_LIBS ${ADDITIONAL_LIBS} lz4)
+endif()
+
+if(ZSTD_STATIC)
+    set(ADDITIONAL_LIBS ${ADDITIONAL_LIBS} ${ZSTD_STATIC})
+else()
+    set(ADDITIONAL_LIBS ${ADDITIONAL_LIBS} zstd)
+endif()
+
+set(ADDITIONAL_LIBS ${ADDITIONAL_LIBS} stdc++ dl)
+
 include(GNUInstallDirs)
 
 include_directories(/usr/local/include;/usr/local/kl/include)
