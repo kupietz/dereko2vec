@@ -13,6 +13,7 @@ find_library(BZ2_STATIC NAMES libbz2.a)
 find_library(LZ4_STATIC NAMES liblz4.a)
 find_library(ZSTD_STATIC NAMES libzstd.a)
 find_library(SNAPPY_STATIC NAMES libsnappy.a)
+find_library(STDC++_STATIC NAMES libstdc++.a)
 
 # Set each library, preferring static if found
 set(ADDITIONAL_LIBS ${ADDITIONAL_LIBS} pthread rt)
@@ -47,7 +48,13 @@ else()
     set(ADDITIONAL_LIBS ${ADDITIONAL_LIBS} snappy)
 endif()
 
-set(ADDITIONAL_LIBS ${ADDITIONAL_LIBS} stdc++ dl)
+if(STDC++_STATIC)
+    set(ADDITIONAL_LIBS ${ADDITIONAL_LIBS} ${STDC++_STATIC})
+else()
+    set(ADDITIONAL_LIBS ${ADDITIONAL_LIBS} stdc++)
+endif()
+
+set(ADDITIONAL_LIBS ${ADDITIONAL_LIBS} dl)
 
 include(GNUInstallDirs)
 
