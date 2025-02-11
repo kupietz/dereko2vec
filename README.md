@@ -47,10 +47,20 @@ korapxml2conllu --word2vec wpd19.zip > wpd19.w2vinput
 
 ## Retrain existing model with new data
 
-For example:
+### For example:
+### Retrain Vectors:
 
 ```bash
 dereko2vec -train new.traindata -output new.vecs -save-net new.net -type 3 -size 200 -window 5 -negative 10 -threads 44 -binary 1 -iter 100 -read-vocab old.vocab -read-net old.net
+```
+
+### Create new RocksDB:
+
+```bash
+dereko2vec -train new.traindata -output new.rocksdb -type 5 -window 5 -threads 8 -binary 1 -iter 1 -read-vocab old.vocab -sample 0 -min-count 0
+dereko2vec -train new.traindata -output .temp.rocksdb -type 5 -window 5 -threads 8 -binary 1 -iter 1 -save-vocab new_focus.vocab -sample 0 -min-count 0
+rm -rf .temp.rocksdb
+python scripts/merge_vocabs.py old.vocab new_focus.vocab new.vocab
 ```
 
 ## References
