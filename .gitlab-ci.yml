@@ -37,9 +37,8 @@ build-and-test:
     - end_section install_linux_packages
 
     - start_section install_rocksdb_static "Building and installing rocksdb-static"
-    - git clone --branch 5.11.fb https://github.com/facebook/rocksdb.git
+    - git clone --branch 5.11.fb https://github.com/kupietz/rocksdb.git
     - cd rocksdb
-    - for f in db/compaction_iteration_stats.h include/rocksdb/utilities/checkpoint.h util/string_util.h; do echo $f; sed -Ei 's|^#pragma once|\0\n#include <cstdint>|' "$f"; done
     - export PROCS=$(nproc)
     - make -j $PROCS static_lib DISABLE_WARNING_AS_ERROR=1 WARNING_FLAGS=-w
     - ccache --show-stats
