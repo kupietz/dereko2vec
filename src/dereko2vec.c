@@ -1685,7 +1685,7 @@ void *TrainModelThread(void *id) {
 					}
 			}
 		} else if(type == 5) {
-			for (a = 0; a < window * 2 + 1 - b; a++) if (a != window) {
+			for (a = 0; a < window * 2 + 1; a++) if (a != window) {
 				c = sentence_position - window + a;
 				if (c < 0) continue;
 				if (c >= sentence_length) continue;
