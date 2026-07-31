@@ -19,10 +19,17 @@ if (NOT COLLOCATORDB)
     message(FATAL_ERROR "No libcollocatordb_static.a found. Please install from https://korap.ids-mannheim.de/gerrit/plugins/gitiles/private/collocatordb")
 endif ()
 
-find_library(ROCKSDB librocksdb.a REQUIRED)
-if (NOT ROCKSDB)
-    message(FATAL_ERROR "No librocksdb.a found. Please install like suggested here https://korap.ids-mannheim.de/gerrit/plugins/gitiles/private/collocatordb#install-rocksdb-and-prerequisites")
+# No version pin, so that the rocksdb of the distribution can be used. A static
+# build needs the static library, otherwise a shared one will do as well.
+if (STATIC_DEREKO2VEC)
+    find_library(ROCKSDB librocksdb.a REQUIRED)
+else ()
+    find_library(ROCKSDB NAMES rocksdb REQUIRED)
 endif ()
+if (NOT ROCKSDB)
+    message(FATAL_ERROR "No rocksdb found. Install the rocksdb development package of your distribution, e.g. librocksdb-dev or rocksdb-devel.")
+endif ()
+message(STATUS "Using RocksDB library ${ROCKSDB}")
 
 file(GLOB APP_SOURCES ${CMAKE_SOURCE_DIR}/src/*.c)
 foreach (mysourcefile ${APP_SOURCES})
