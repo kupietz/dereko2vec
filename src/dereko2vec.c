@@ -21,6 +21,8 @@
 #include <pthread.h>
 #include <collocatordb.h>
 
+#include "mmap_vecs.h"
+
 #define MAX_STRING 100
 #define EXP_TABLE_SIZE 1000
 #define MAX_EXP 6
@@ -1906,6 +1908,19 @@ void TrainModel() {
 		free(cl);
 	}
 	fclose(fo);
+	/* Write the memory mappable form right away. Otherwise derekovecs builds it
+	   on its first start, which takes a while and needs write access to the
+	   directory the models live in. The k-means classes are something else, so
+	   only word vectors are converted. */
+	if (classes == 0) {
+		if (debug_mode > 0) {
+			printf("Converting %s to memory mappable structures\n", output_file);
+			fflush(stdout);
+		}
+		if (convert_vecs_to_mmap(output_file) != 0)
+			fprintf(stderr, "Could not write the memory mappable form of %s\n",
+					output_file);
+	}
 	if (save_net_file[0] != 0)
 		SaveNet();
 }
