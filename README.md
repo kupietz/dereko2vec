@@ -25,14 +25,23 @@ make && ctest --extra-verbose && sudo make install
 This installs `dereko2vec` and `vecs2mmap`. The build directory has to be
 `build` inside the sources, the test looks for the binary relative to it.
 
-A completely static `dereko2vec` is about 10% faster on the collocator database
-and needs a static rocksdb and a static collocatordb:
+### Faster indexing
+
+Linking rocksdb and collocatordb statically makes counting collocations about
+22% faster, measured with 2 million increments against rocksdb 7.8.3. On an
+indexing run of two weeks that is about three days. Point the build at the
+static libraries, the compression libraries stay shared:
 
 ```bash
-cmake -DSTATIC_DEREKO2VEC=ON ..
+cmake -DCOLLOCATORDB=/usr/local/lib64/libcollocatordb_static.a \
+      -DROCKSDB=/path/to/librocksdb.a ..
 ```
 
-Debian and Ubuntu ship `librocksdb.a` in `librocksdb-dev`. Fedora, Rocky Linux
+This does not need static versions of zlib, snappy, lz4 and zstd, which Rocky
+Linux, RHEL and Fedora do not ship. Only `-DSTATIC_DEREKO2VEC=ON`, which builds
+a completely static binary, needs those, and is rarely worth the trouble.
+
+Debian and Ubuntu have `librocksdb.a` in `librocksdb-dev`. Fedora, Rocky Linux
 and RHEL do not, the
 [collocatordb README](https://korap.ids-mannheim.de/gerrit/plugins/gitiles/ids-kl/collocatordb)
 says how to build one there without shadowing the headers of the package.
