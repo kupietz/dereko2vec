@@ -1,0 +1,72 @@
+name: build
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install dependencies (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake librocksdb-dev libgflags-dev libsnappy-dev \
+                                  zlib1g-dev libbz2-dev liblz4-dev libzstd-dev
+
+      - name: Install dependencies (macOS)
+        if: runner.os == 'macOS'
+        run: brew install cmake rocksdb snappy lz4 zstd gflags
+
+      - name: Build and install collocatordb
+        run: |
+          EXTRA=""
+          [ "$RUNNER_OS" = "macOS" ] && EXTRA="-DCMAKE_PREFIX_PATH=$(brew --prefix)"
+          git clone --depth 1 https://korap.ids-mannheim.de/gerrit/ids-kl/collocatordb
+          cmake -S collocatordb -B collocatordb/build -DCMAKE_INSTALL_PREFIX=/usr/local $EXTRA
+          cmake --build collocatordb/build -j
+          sudo cmake --install collocatordb/build
+          if [ "$RUNNER_OS" = "Linux" ]; then sudo ldconfig; fi
+
+      # The build directory has to be build/ inside the sources, the test looks
+      # for the binary relative to it.
+      - name: Configure
+        run: |
+          EXTRA=""
+          [ "$RUNNER_OS" = "macOS" ] && EXTRA="-DCMAKE_PREFIX_PATH=$(brew --prefix)"
+          cmake -S . -B build -DCMAKE_INSTALL_PREFIX=/usr/local $EXTRA
+
+      - name: Build
+        run: cmake --build build -j
+
+      - name: Test
+        run: ctest --test-dir build --output-on-failure
+
+      # The training writes the memory mappable form of the model, which
+      # derekovecs maps. vecs2mmap does the same for models trained earlier.
+      - name: Check the memory mappable model form
+        run: |
+          ./build/dereko2vec -train tests/data/wpd19_10000.w2vinput -output /tmp/m.vecs \
+              -type 3 -size 50 -window 5 -negative 5 -threads 2 -iter 1 -min-count 5 -binary 1
+          echo "written by the training:"
+          ls -l /tmp/m.vecs.vecs /tmp/m.vecs.words
+          rm /tmp/m.vecs.vecs /tmp/m.vecs.words
+          ./build/vecs2mmap /tmp/m.vecs
+          echo "written by vecs2mmap:"
+          ls -l /tmp/m.vecs.vecs /tmp/m.vecs.words
+
+      - name: Install
+        run: |
+          sudo cmake --install build
+          dereko2vec 2>&1 | head -1
+          vecs2mmap -h | head -1
