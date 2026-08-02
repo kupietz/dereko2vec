@@ -2100,6 +2100,17 @@ int main(int argc, char **argv) {
 	}
 	SaveArgs(argc, argv);
 	TrainModel();
+	if (cdb != NULL) {
+		/* Writes what is still in memory. The collocation database runs
+		   without a write ahead log, so the counts of the write buffers that
+		   were not flushed yet are lost without this. */
+		if (debug_mode > 0) {
+			printf("Closing the collocation database ...\n");
+			fflush(stdout);
+		}
+		close_collocatordb(cdb);
+		cdb = NULL;
+	}
 	return 0;
 }
 
