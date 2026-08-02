@@ -64,6 +64,18 @@ endforeach (mysourcefile ${APP_SOURCES})
 # converter that writes the memory mappable form derekovecs maps. The remaining
 # programs keep the generic names they inherited from word2vec, like distance
 # or kmeans_txt, which have no business in a directory on everybody's PATH.
+#
+# The installed dereko2vec gets the directory of the collocatordb it was linked
+# against as its rpath. An installation below /usr/local is not in the search
+# path of the loader by default, and without this it only starts with
+# LD_LIBRARY_PATH set.
+if (NOT STATIC_DEREKO2VEC)
+    get_filename_component(COLLOCATORDB_LIBDIR "${COLLOCATORDB}" DIRECTORY)
+    list(FIND CMAKE_PLATFORM_IMPLICIT_LINK_DIRECTORIES "${COLLOCATORDB_LIBDIR}" isSystemLibDir)
+    if ("${isSystemLibDir}" STREQUAL "-1")
+        set_target_properties(dereko2vec PROPERTIES INSTALL_RPATH "${COLLOCATORDB_LIBDIR}")
+    endif ()
+endif ()
 install(TARGETS dereko2vec vecs2mmap RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 
 enable_testing()
