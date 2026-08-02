@@ -9,7 +9,7 @@ Fork of [wang2vec](https://github.com/wlin12/wang2vec) with extensions for re-tr
 * cmake
 * the rocksdb of the distribution, e.g. `librocksdb-dev` on Debian and Ubuntu
   or `rocksdb-devel` on Fedora and Rocky Linux
-* [libcollocatordb](https://korap.ids-mannheim.de/gerrit/plugins/gitiles/ids-kl/collocatordb) >= v1.5.0,
+* [libcollocatordb](https://korap.ids-mannheim.de/gerrit/plugins/gitiles/ids-kl/collocatordb) >= v1.6.0,
   which builds against that rocksdb
 
 ### Build and install
