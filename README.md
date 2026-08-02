@@ -7,44 +7,76 @@ Fork of [wang2vec](https://github.com/wlin12/wang2vec) with extensions for re-tr
 ### Dependencies
 
 * cmake
-* the rocksdb of the distribution, e.g. `librocksdb-dev` on Debian and Ubuntu
-  or `rocksdb-devel` on Fedora and Rocky Linux
-* [libcollocatordb](https://korap.ids-mannheim.de/gerrit/plugins/gitiles/ids-kl/collocatordb) >= v1.6.0,
-  which builds against that rocksdb
+* rocksdb. `librocksdb-dev` on Debian and Ubuntu and `rocksdb-devel` on Fedora
+  do. Rocky Linux and RHEL package a rocksdb that is too old, there it has to
+  be built, which the
+  [collocatordb README](https://korap.ids-mannheim.de/gerrit/plugins/gitiles/ids-kl/collocatordb)
+  describes
+* [libcollocatordb](https://korap.ids-mannheim.de/gerrit/plugins/gitiles/ids-kl/collocatordb) >= v1.6.0
+
+It has to be the same rocksdb that collocatordb was built against. dereko2vec
+itself does not include any rocksdb header, but it links what collocatordb
+refers to, and symbols of one version do not exist in another.
 
 ### Build and install
 
 ```bash
-cd dereko2vec
-mkdir build
-cd build
-cmake ..
-make && ctest --extra-verbose && sudo make install
+cmake -S . -B build
+cmake --build build -j $(nproc)
+ctest --test-dir build --extra-verbose
+sudo cmake --install build
 ```
 
 This installs `dereko2vec` and `vecs2mmap`. The build directory has to be
 `build` inside the sources, the test looks for the binary relative to it.
 
+Where rocksdb or collocatordb were installed into a prefix of their own, name
+it, which covers the libraries and the header at once. Several prefixes are
+separated by semicolons:
+
+```bash
+cmake -S . -B build -DCMAKE_PREFIX_PATH=$HOME/rocksdb
+```
+
 ### Faster indexing
 
 Linking rocksdb and collocatordb statically makes counting collocations about
 22% faster, measured with 2 million increments against rocksdb 7.8.3. On an
-indexing run of two weeks that is about three days. Point the build at the
-static libraries, the compression libraries stay shared:
+indexing run of two weeks that is about three days. Name the two static
+libraries, the compression libraries stay shared:
 
 ```bash
-cmake -DCOLLOCATORDB=/usr/local/lib64/libcollocatordb_static.a \
-      -DROCKSDB=/path/to/librocksdb.a ..
+cmake -S . -B build \
+      -DCOLLOCATORDB=/usr/local/lib64/libcollocatordb_static.a \
+      -DROCKSDB=$HOME/rocksdb/lib64/librocksdb.a
 ```
+
+`lib64` on Fedora, Rocky Linux and RHEL, `lib` on Debian and Ubuntu. Debian and
+Ubuntu ship `librocksdb.a` in `librocksdb-dev`, elsewhere it comes out of a
+rocksdb built by hand, see the collocatordb README.
 
 This does not need static versions of zlib, snappy, lz4 and zstd, which Rocky
 Linux, RHEL and Fedora do not ship. Only `-DSTATIC_DEREKO2VEC=ON`, which builds
 a completely static binary, needs those, and is rarely worth the trouble.
 
-Debian and Ubuntu have `librocksdb.a` in `librocksdb-dev`. Fedora, Rocky Linux
-and RHEL do not, the
-[collocatordb README](https://korap.ids-mannheim.de/gerrit/plugins/gitiles/ids-kl/collocatordb)
-says how to build one there without shadowing the headers of the package.
+### If dereko2vec does not start
+
+```
+error while loading shared libraries: libcollocatordb.so.1
+```
+
+means the loader does not search the directory the library was installed to.
+The installed `dereko2vec` carries the directory of the collocatordb it was
+linked against, so this only happens with a binary that was built before that,
+or when it is the rocksdb below that library which is not found. Either run
+`sudo ldconfig` after installing collocatordb, or add the directory:
+
+```bash
+echo $HOME/rocksdb/lib64 | sudo tee /etc/ld.so.conf.d/rocksdb.conf
+sudo ldconfig
+```
+
+A statically linked `dereko2vec` has neither problem.
 
 ## Run
 

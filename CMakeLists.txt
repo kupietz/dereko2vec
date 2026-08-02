@@ -55,10 +55,24 @@ if (NOT COLLOCATORDB)
 endif ()
 if (NOT ROCKSDB)
     message(FATAL_ERROR "No rocksdb found. Install the rocksdb development "
-            "package of your distribution, e.g. librocksdb-dev or rocksdb-devel.")
+            "package of your distribution, e.g. librocksdb-dev or "
+            "rocksdb-devel. Where there is none, or where it is older than the "
+            "one collocatordb was built against, build rocksdb and say where "
+            "it is: -DCMAKE_PREFIX_PATH=<prefix it was installed to>. It has "
+            "to be the same rocksdb that collocatordb was built against.")
 endif ()
 message(STATUS "Using collocatordb ${COLLOCATORDB}")
 message(STATUS "Using RocksDB ${ROCKSDB}")
+
+# collocatordb.h has to belong to that library. Looked up rather than assumed,
+# so that CMAKE_PREFIX_PATH works for a collocatordb in a prefix of its own,
+# and put before the rest, so that an older one below /usr/local cannot shadow
+# it - the compiler looks into /usr/local/include before /usr/include.
+find_path(COLLOCATORDB_INCLUDE_DIR collocatordb.h)
+if (COLLOCATORDB_INCLUDE_DIR)
+    include_directories(BEFORE ${COLLOCATORDB_INCLUDE_DIR})
+    message(STATUS "Using collocatordb header in ${COLLOCATORDB_INCLUDE_DIR}")
+endif ()
 
 file(GLOB APP_SOURCES ${CMAKE_SOURCE_DIR}/src/*.c)
 foreach (mysourcefile ${APP_SOURCES})
