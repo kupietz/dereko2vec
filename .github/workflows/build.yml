@@ -52,6 +52,20 @@ jobs:
       - name: Test
         run: ctest --test-dir build --output-on-failure
 
+      # The count based part of the test traps on MacOS, while it runs on Linux
+      # with rocksdb 8.9, 10.2 and 11.0. Without a backtrace there is nothing to
+      # go by, so produce one.
+      - name: Backtrace of the crash (macOS)
+        if: failure() && runner.os == 'macOS'
+        run: |
+          D=$(mktemp -d)
+          ./build/dereko2vec -train tests/data/wpd19_10000.w2vinput -output "$D/m.vecs" \
+              -type 3 -save-vocab "$D/m.vocab" -size 50 -window 5 -negative 5 \
+              -threads 4 -iter 1 -min-count 2 -binary 1 > /dev/null 2>&1
+          lldb --batch -o run -o 'bt all' -o quit -- ./build/dereko2vec \
+              -train tests/data/wpd19_10000.w2vinput -output "$D/m.rocksdb" \
+              -type 5 -read-vocab "$D/m.vocab" -threads 8 2>&1 | tail -80
+
       # The training writes the memory mappable form of the model, which
       # derekovecs maps. vecs2mmap does the same for models trained earlier.
       - name: Check the memory mappable model form
