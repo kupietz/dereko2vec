@@ -1,18 +1,35 @@
 cmake_minimum_required(VERSION 3.9)
 project(dereko2vec VERSION 0.9.1 DESCRIPTION "Fork from wang2vec with extensions for re-training and count based models")
 option(STATIC_DEREKO2VEC "Build dereko2vec as a static binary" OFF)
+if (STATIC_DEREKO2VEC AND APPLE)
+    message(FATAL_ERROR "STATIC_DEREKO2VEC does not work on MacOS, which ships "
+            "no static system libraries. Build without it.")
+endif ()
 
 set(CMAKE_VERBOSE_MAKEFILE on)
+
+if (APPLE)
+    # No librt, its functions are in the system library. -march=native is not
+    # accepted by the compilers on Apple Silicon, and the speed of the training
+    # is not what MacOS is used for here.
+    set(LIBRT "")
+    set(TUNE_FLAGS "")
+else ()
+    set(LIBRT "rt")
+    set(TUNE_FLAGS "-march=native -mtune=native")
+endif ()
+
 if (CMAKE_BUILD_TYPE MATCHES Debug)
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g -O0 -Wall -Wextra -Wno-unused-parameter -Wno-unused-variable -Wno-unused-function -Wno-unused-but-set-variable -Wno-unused-but-set-parameter -Wno-unused-value -Wno-unused-result")
 else ()
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O3 -march=native -mtune=native -Wall -funroll-loops")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O3 ${TUNE_FLAGS} -Wall -funroll-loops")
 endif ()
-set(ADDITIONAL_LIBS ${ADDITIONAL_LIBS} m pthread rt snappy z bz2 lz4 zstd stdc++ dl)
+set(ADDITIONAL_LIBS ${ADDITIONAL_LIBS} m pthread ${LIBRT} snappy z bz2 lz4 zstd stdc++ dl)
 include(GNUInstallDirs)
 
-include_directories(/usr/local/include;/usr/local/kl/include)
-link_directories(/usr/local/kl/lib;/usr/local/lib;/usr/local/lib64)
+# /opt/homebrew is where homebrew installs on Apple Silicon
+include_directories(/usr/local/include /usr/local/kl/include /opt/homebrew/include)
+link_directories(/usr/local/kl/lib /usr/local/lib /usr/local/lib64 /opt/homebrew/lib)
 
 # A static dereko2vec needs everything as a static library. An ordinary build
 # takes the shared ones, and it has to take them explicitly: a leftover static
