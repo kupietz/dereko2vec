@@ -14,22 +14,34 @@ include(GNUInstallDirs)
 include_directories(/usr/local/include;/usr/local/kl/include)
 link_directories(/usr/local/kl/lib;/usr/local/lib;/usr/local/lib64)
 
-find_library(COLLOCATORDB libcollocatordb_static.a REQUIRED)
-if (NOT COLLOCATORDB)
-    message(FATAL_ERROR "No libcollocatordb_static.a found. Please install from https://korap.ids-mannheim.de/gerrit/plugins/gitiles/private/collocatordb")
+# A static dereko2vec needs everything as a static library. An ordinary build
+# takes the shared ones, and it has to take them explicitly: a leftover static
+# library below /usr/local would otherwise win over the shared library of the
+# distribution, because cmake weighs the search path higher than the suffix.
+# Set -DCOLLOCATORDB=<path> or -DROCKSDB=<path> to pick specific ones.
+if (STATIC_DEREKO2VEC)
+    find_library(COLLOCATORDB libcollocatordb_static.a)
+    find_library(ROCKSDB librocksdb.a)
+else ()
+    set(_dereko2vec_lib_suffixes ${CMAKE_FIND_LIBRARY_SUFFIXES})
+    set(CMAKE_FIND_LIBRARY_SUFFIXES ".so")
+    find_library(COLLOCATORDB NAMES collocatordb)
+    find_library(ROCKSDB NAMES rocksdb)
+    set(CMAKE_FIND_LIBRARY_SUFFIXES ${_dereko2vec_lib_suffixes})
 endif ()
 
-# No version pin, so that the rocksdb of the distribution can be used. A static
-# build needs the static library, otherwise a shared one will do as well.
-if (STATIC_DEREKO2VEC)
-    find_library(ROCKSDB librocksdb.a REQUIRED)
-else ()
-    find_library(ROCKSDB NAMES rocksdb REQUIRED)
+if (NOT COLLOCATORDB)
+    message(FATAL_ERROR "No collocatordb found. Please install it from "
+            "https://korap.ids-mannheim.de/gerrit/plugins/gitiles/ids-kl/collocatordb"
+            " - a static dereko2vec needs libcollocatordb_static.a, otherwise "
+            "libcollocatordb.so is enough.")
 endif ()
 if (NOT ROCKSDB)
-    message(FATAL_ERROR "No rocksdb found. Install the rocksdb development package of your distribution, e.g. librocksdb-dev or rocksdb-devel.")
+    message(FATAL_ERROR "No rocksdb found. Install the rocksdb development "
+            "package of your distribution, e.g. librocksdb-dev or rocksdb-devel.")
 endif ()
-message(STATUS "Using RocksDB library ${ROCKSDB}")
+message(STATUS "Using collocatordb ${COLLOCATORDB}")
+message(STATUS "Using RocksDB ${ROCKSDB}")
 
 file(GLOB APP_SOURCES ${CMAKE_SOURCE_DIR}/src/*.c)
 foreach (mysourcefile ${APP_SOURCES})
@@ -47,6 +59,12 @@ foreach (mysourcefile ${APP_SOURCES})
         target_link_libraries(${myname} m pthread)
     endif ()
 endforeach (mysourcefile ${APP_SOURCES})
+
+# Only the two that are used outside of a build directory: the trainer and the
+# converter that writes the memory mappable form derekovecs maps. The remaining
+# programs keep the generic names they inherited from word2vec, like distance
+# or kmeans_txt, which have no business in a directory on everybody's PATH.
+install(TARGETS dereko2vec vecs2mmap RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 
 enable_testing()
 find_program(BASH_PROGRAM bash)

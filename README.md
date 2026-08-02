@@ -6,8 +6,11 @@ Fork of [wang2vec](https://github.com/wlin12/wang2vec) with extensions for re-tr
 
 ### Dependencies
 
-* cmake3
-* [libcollocaltordb](https://korap.ids-mannheim.de/gerrit/plugins/gitiles/ids-kl/collocatordb) >= v1.3.0
+* cmake
+* the rocksdb of the distribution, e.g. `librocksdb-dev` on Debian and Ubuntu
+  or `rocksdb-devel` on Fedora and Rocky Linux
+* [libcollocatordb](https://korap.ids-mannheim.de/gerrit/plugins/gitiles/ids-kl/collocatordb) >= v1.5.0,
+  which builds against that rocksdb
 
 ### Build and install
 
@@ -16,8 +19,23 @@ cd dereko2vec
 mkdir build
 cd build
 cmake ..
-make && ctest3 --extra-verbose && sudo make install
+make && ctest --extra-verbose && sudo make install
 ```
+
+This installs `dereko2vec` and `vecs2mmap`. The build directory has to be
+`build` inside the sources, the test looks for the binary relative to it.
+
+A completely static `dereko2vec` is about 10% faster on the collocator database
+and needs a static rocksdb and a static collocatordb:
+
+```bash
+cmake -DSTATIC_DEREKO2VEC=ON ..
+```
+
+Debian and Ubuntu ship `librocksdb.a` in `librocksdb-dev`. Fedora, Rocky Linux
+and RHEL do not, the
+[collocatordb README](https://korap.ids-mannheim.de/gerrit/plugins/gitiles/ids-kl/collocatordb)
+says how to build one there without shadowing the headers of the package.
 
 ## Run
 
